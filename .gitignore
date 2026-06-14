@@ -52,3 +52,6 @@ next-env.d.ts
 
 # private keys - NEVER commit these
 scripts/deploy-key.txt
+
+# deployment and admin scripts
+scripts/
