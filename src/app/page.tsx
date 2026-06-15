@@ -173,7 +173,7 @@ function DashboardInner() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      setTransferStatus(`Withdrawal initiated! Circle TX ID: ${data.transactionId}`);
+      setTransferStatus(`Withdrawal initiated! TX: ${data.txHash && data.txHash !== data.transactionId ? data.txHash.slice(0, 10) + '...' : data.transactionId}`);
       setWithdrawAmount("");
       setTimeout(() => {
         fetchBalance(wallet.id);

@@ -730,20 +730,29 @@ export function IntelligenceView({
                                 </span>
                               )}
                               {msg.txHash && msg.txHash.startsWith('0x') && (
-                                <a href={
-                                  (() => {
-                                    const content = msg.content.toLowerCase();
-                                    const prevMsg = arr.slice(0, index).reverse().find(m => m.role === 'user');
-                                    const userContent = prevMsg ? prevMsg.content.toLowerCase() : '';
-                                    const combined = content + " " + userContent;
+                                  <a href={
+                                    (() => {
+                                      const content = msg.content.toLowerCase();
+                                      const prevMsg = arr.slice(0, index).reverse().find(m => m.role === 'user');
+                                      const userContent = prevMsg ? prevMsg.content.toLowerCase() : '';
+                                      const combined = content + " " + userContent;
+                                      
+                                      const fromMatch = combined.match(/from\s+([a-z]+)/);
+                                      if (fromMatch) {
+                                        const m = fromMatch[1];
+                                        if (m.includes('base')) return `https://sepolia.basescan.org/tx/${msg.txHash}`;
+                                        if (m.includes('arb')) return `https://sepolia.arbiscan.io/tx/${msg.txHash}`;
+                                        if (m.includes('op') || m.includes('optimism')) return `https://sepolia-optimism.etherscan.io/tx/${msg.txHash}`;
+                                        if (m.includes('arc')) return `https://testnet.arcscan.app/tx/${msg.txHash}`;
+                                      }
 
-                                    if (combined.includes('base')) return `https://sepolia.basescan.org/tx/${msg.txHash}`;
-                                    if (combined.includes('arb')) return `https://sepolia.arbiscan.io/tx/${msg.txHash}`;
-                                    if (combined.includes('optimism') || combined.includes('op ')) return `https://sepolia-optimism.etherscan.io/tx/${msg.txHash}`;
+                                      if (combined.includes('base')) return `https://sepolia.basescan.org/tx/${msg.txHash}`;
+                                      if (combined.includes('arb')) return `https://sepolia.arbiscan.io/tx/${msg.txHash}`;
+                                      if (combined.includes('optimism') || combined.includes('op ')) return `https://sepolia-optimism.etherscan.io/tx/${msg.txHash}`;
 
-                                    return `https://testnet.arcscan.app/tx/${msg.txHash}`;
-                                  })()
-                                } target="_blank" rel="noopener noreferrer" className="text-xs font-mono dark:text-zinc-455 text-zinc-500 hover:dark:text-zinc-200 hover:text-zinc-900 transition-colors flex items-center gap-1">
+                                      return `https://testnet.arcscan.app/tx/${msg.txHash}`;
+                                    })()
+                                  } target="_blank" rel="noopener noreferrer" className="text-xs font-mono dark:text-zinc-455 text-zinc-500 hover:dark:text-zinc-200 hover:text-zinc-900 transition-colors flex items-center gap-1">
                                   {msg.txHash.slice(0, 10)}...
                                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
                                 </a>

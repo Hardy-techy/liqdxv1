@@ -13,6 +13,25 @@ function getClient() {
   });
 }
 
+async function pollForTxHash(client: any, txId: string): Promise<string> {
+  if (!txId) return "";
+  for (let i = 0; i < 20; i++) {
+    try {
+      const res = await client.getTransaction({ id: txId });
+      const state = res.data?.transaction?.state;
+      if (state === "FAILED" || state === "DENIED") {
+        throw new Error(`Transaction failed on-chain with reason: ${res.data?.transaction?.errorReason || "Unknown"}`);
+      }
+      const hash = res.data?.transaction?.txHash;
+      if (hash) return hash;
+    } catch (e: any) {
+      if (e.message?.includes("Transaction failed")) throw e;
+    }
+    await new Promise(r => setTimeout(r, 1000));
+  }
+  return txId; // Fallback to UUID if it takes too long
+}
+
 export async function POST(req: Request) {
   try {
     // CSRF protection
@@ -117,6 +136,9 @@ export async function POST(req: Request) {
         fee: { type: "level", config: { feeLevel: "MEDIUM" } }
       });
 
+      const txId = response.data?.id || null;
+      const realTxHash = txId ? await pollForTxHash(client, txId) : null;
+
       // Log withdraw to Supabase (using admin client)
       const supabase = getSupabaseAdmin();
       await supabase.from("transaction_logs").insert({
@@ -125,13 +147,14 @@ export async function POST(req: Request) {
         intent: "withdraw",
         token_in: "USDC",
         amount: amount.toString(),
-        tx_id: response.data?.id || null,
+        tx_id: txId,
+        tx_hash: realTxHash && realTxHash !== txId ? realTxHash : null,
         status: "success", // Changed to success for UX since we don't have webhooks
         blockchain,
         message: `Withdraw of ${amount} USDC to ${destinationAddress}`,
       });
 
-      return NextResponse.json({ success: true, transactionId: response.data?.id, message: "Withdrawal initiated." });
+      return NextResponse.json({ success: true, transactionId: txId, txHash: realTxHash, message: "Withdrawal initiated." });
     }
 
     // --- LOG DEPOSIT: Manual deposit from user wallet to wallet ---
