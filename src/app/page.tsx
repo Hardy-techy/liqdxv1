@@ -17,7 +17,7 @@ import { useTransactionHistory } from "@/hooks/useTransactionHistory";
 import { useBalances } from "@/hooks/useBalances";
 
 function DashboardInner() {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected, chain } = useAccount();
   const { sendTransactionAsync } = useSendTransaction();
   const { theme, toggleTheme } = useTheme();
 
@@ -33,6 +33,7 @@ function DashboardInner() {
   // Custom Hooks
   const { 
     isAuthenticated,
+    isAuthenticating,
     wallet, 
     wallets, 
     twitterHandle, 
@@ -186,9 +187,21 @@ function DashboardInner() {
     }
   };
 
-  // Render pre-auth landing if not connected
-  if (!isConnected) {
+  // Render pre-auth landing if not connected, wrong chain, or not authenticated
+  if (!isConnected || chain?.unsupported || (!isAuthenticated && !isAuthenticating)) {
     return <LandingPage authError={authError} setAuthError={setAuthError} />;
+  }
+
+  // Render loading state while user is signing the SIWE message
+  if (isAuthenticating) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#F8F9FA] dark:bg-[#09090b]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-[#0066FF] border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-zinc-500 font-medium">Please sign the message in your wallet...</p>
+        </div>
+      </div>
+    );
   }
 
   // Render Connected Dashboard Layout
