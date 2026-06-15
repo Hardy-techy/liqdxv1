@@ -17,7 +17,7 @@ import { useTransactionHistory } from "@/hooks/useTransactionHistory";
 import { useBalances } from "@/hooks/useBalances";
 
 function DashboardInner() {
-  const { address, isConnected, chain } = useAccount();
+  const { address, isConnected, chainId } = useAccount();
   const { sendTransactionAsync } = useSendTransaction();
   const { theme, toggleTheme } = useTheme();
 
@@ -188,7 +188,7 @@ function DashboardInner() {
   };
 
   // Render pre-auth landing if not connected, wrong chain, or not authenticated
-  if (!isConnected || chain?.unsupported || (!isAuthenticated && !isAuthenticating)) {
+  if (!isConnected || chainId !== 5042002 || (!isAuthenticated && !isAuthenticating)) {
     return <LandingPage authError={authError} setAuthError={setAuthError} />;
   }
 
