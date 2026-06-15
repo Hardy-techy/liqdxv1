@@ -494,7 +494,7 @@ STRICT ACTION DEFINITIONS:
 CRITICAL HISTORY RULE: You MUST use the conversation history to resolve pronouns and contextual references like "that protocol", "there", "it", or "yes". If the previous message recommended "Morpho", and the user says "deposit to that protocol", you MUST set protocol="morpho". If the AI asked for confirmation to execute a specific transaction, extract the exact parameters for that pending transaction instead of "conversation".
 
 EXAMPLES:
-- "price of ethereum" → action=price, targetAsset="ethereum"
+- "price of optimism" → action=price, targetAsset="optimism"
 - "what is BTC worth" → action=price, targetAsset="bitcoin"
 - "latest crypto news" → action=news
 - "show me headlines" → action=news
@@ -504,7 +504,7 @@ EXAMPLES:
 - "should I buy bitcoin" → action=conversation
 - "how do I bridge?" → action=conversation
 - "what's the APY on Aave?" → action=conversation
-- "can you bridge my 5 usdc to ethereum?" → action=bridge
+- "can you bridge my 5 usdc to optimism?" → action=bridge
 - "swap 10 USDC to EURC" → action=swap
 - "deposit 5 usdc in arbitrum aave" → action=yield
 - "withdraw my USDC from Aave" → action=withdraw_yield
@@ -525,7 +525,7 @@ If action is send, extract the destinationHandle (e.g. "@hardy"). Be sure to inc
 
 Return a single JSON object (no markdown): {"action":"swap|bridge|send|balance|conversation|help|yield|withdraw_yield|morpho_vault|yield_options|price|news|unknown","tokenIn":"USDC|EURC","tokenOut":"USDC|EURC","amount":"string","percentage":number,"useAll":boolean,"sourceChain":"string","destinationChain":"string","destinationHandle":"string","targetAsset":"string","protocol":"aave|morpho"}
 
-If action is price, extract the targetAsset as the full coin name used by CoinGecko (e.g. "solana", "sui", "bitcoin", "ethereum", "dogecoin", "cardano", "ripple").
+If action is price, extract the targetAsset as the full coin name used by CoinGecko (e.g. "solana", "sui", "bitcoin", "optimism", "dogecoin", "cardano", "ripple").
 
 amount = absolute token quantity as string, "0" if percentage or useAll is used.
 percentage = 0-100 if user specifies a fraction of their balance, otherwise 0.
@@ -575,7 +575,7 @@ useAll = true if user wants to use their entire balance.`;
     const parsedSourceChain = parsed.sourceChain?.toLowerCase() || "arc testnet";
     const parsedSourceDomain = CCTP_DOMAINS[parsedSourceChain] || "26";
 
-    let parsedDestChain = parsed.destinationChain?.toLowerCase() || "ethereum";
+    let parsedDestChain = parsed.destinationChain?.toLowerCase() || "optimism";
     let parsedDestDomain = CCTP_DOMAINS[parsedDestChain];
 
     // Fallback if the extracted chain isn't in our dictionary
@@ -584,11 +584,11 @@ useAll = true if user wants to use their entire balance.`;
       if (extracted) {
         parsedDestChain = extracted.chain;
         parsedDestDomain = extracted.domain;
-      } else if (parsed.destinationChain && parsed.destinationChain !== "ethereum") {
+      } else if (parsed.destinationChain && parsed.destinationChain !== "optimism") {
         // User explicitly specified an unsupported chain that Gemini caught
         parsedDestDomain = "";
       } else {
-        parsedDestChain = "ethereum";
+        parsedDestChain = "optimism";
         parsedDestDomain = "0";
       }
     }
@@ -635,7 +635,7 @@ function parseIntentFallback(prompt: string, agentProfile?: string): ParsedInten
     percentage,
     useAll,
     protocol: text.includes("morpho") ? "morpho" : "aave",
-    destinationChain: destData?.chain || "ethereum",
+    destinationChain: destData?.chain || "optimism",
     destinationDomain: destData?.domain || "0",
     destinationHandle: prompt.match(/@(\w+)/)?.[0] || undefined,
     raw: prompt,
@@ -659,7 +659,7 @@ async function generateConversationalResponse(prompt: string, balances?: string,
   }
 
   if (/@(oracle|orcle)\s+help/i.test(lower)) {
-    return `Here are some prompts you can use with **Oracle** (Intelligence Agent):\n- "What is the price of Bitcoin and Ethereum?"\n- "Give me the latest crypto news"\n- "Summarize today's market trends"`;
+    return `Here are some prompts you can use with **Oracle** (Intelligence Agent):\n- "What is the price of Bitcoin and Optimism?"\n- "Give me the latest crypto news"\n- "Summarize today's market trends"`;
   }
 
   let apyContext = "";
@@ -1496,7 +1496,7 @@ export async function POST(req: Request) {
         return NextResponse.json({
           success: false,
           intent: "bridge",
-          message: `Bridge failed: Cannot bridge from ${intent.sourceChain || "Arc Testnet"} to ${intent.destinationChain || "the same network"}. Please specify a valid destination network like Ethereum, Arbitrum, or Base.`,
+          message: `Bridge failed: Cannot bridge from ${intent.sourceChain || "Arc Testnet"} to ${intent.destinationChain || "the same network"}. Please specify a valid destination network like Optimism, Arbitrum, or Base.`,
         });
       }
 
@@ -1504,7 +1504,7 @@ export async function POST(req: Request) {
         return NextResponse.json({
           success: false,
           intent: "bridge",
-          message: `Unsupported source chain ${intent.sourceChain}. Liqdx currently supports Ethereum, Arbitrum, Base, and Arc Testnet.`,
+          message: `Unsupported source chain ${intent.sourceChain}. Liqdx currently supports Optimism, Arbitrum, Base, and Arc Testnet.`,
         });
       }
 
@@ -1512,7 +1512,7 @@ export async function POST(req: Request) {
         return NextResponse.json({
           success: false,
           intent: "bridge",
-          message: `Unsupported destination chain ${intent.destinationChain}. Liqdx currently supports Ethereum, Arbitrum, Base, and Arc Testnet.`,
+          message: `Unsupported destination chain ${intent.destinationChain}. Liqdx currently supports Optimism, Arbitrum, Base, and Arc Testnet.`,
         });
       }
 
@@ -1619,11 +1619,11 @@ export async function POST(req: Request) {
 
       try {
         const amountInUnits = Math.floor(parseFloat(bridgeAmount) * 1e6).toString();
-        const destinationChainName = intent.destinationChain || "ethereum";
+        const destinationChainName = intent.destinationChain || "optimism";
 
         // --- LI.FI BRIDGE (primary — 84x cheaper than CCTP) ---
         const fromLifiChainId = LIFI_CHAIN_IDS[intent.sourceChain || "arc testnet"] || LIFI_CHAIN_IDS["arc testnet"];
-        const toLifiChainId = LIFI_CHAIN_IDS[intent.destinationChain || "ethereum"];
+        const toLifiChainId = LIFI_CHAIN_IDS[intent.destinationChain || "optimism"];
 
         if (toLifiChainId) {
           console.log(`[LI.FI] Attempting bridge: ${bridgeAmount} USDC from chain ${fromLifiChainId} to ${toLifiChainId}`);
@@ -1790,7 +1790,7 @@ export async function POST(req: Request) {
           return NextResponse.json({
             success: false,
             intent: "bridge",
-            message: `Bridge route not available for this destination chain. Try bridging to Ethereum, Base, or Arbitrum.`,
+            message: `Bridge route not available for this destination chain. Try bridging to Optimism, Base, or Arbitrum.`,
           });
         }
         // Catch-all: return a friendly error instead of crashing with 500
@@ -2415,7 +2415,7 @@ export async function POST(req: Request) {
       const requestedAsset = intent.targetAsset?.toLowerCase() || "solana";
       
       // Default baseline assets
-      const idsToFetch = ["bitcoin", "ethereum", "usd-coin", "euro-coin"];
+      const idsToFetch = ["bitcoin", "optimism", "usd-coin", "euro-coin"];
       if (requestedAsset && !idsToFetch.includes(requestedAsset)) {
         idsToFetch.push(requestedAsset);
       }
@@ -2445,7 +2445,7 @@ export async function POST(req: Request) {
         // Fallback for extreme testnet/dev scenarios where API limit is hit
         const fallbackPrices: any = {
           "bitcoin": { usd: 94250.80 },
-          "ethereum": { usd: 3410.15 },
+          "optimism": { usd: 1.85 },
           "usd-coin": { usd: 1.00 },
           "euro-coin": { usd: 1.08 }
         };
@@ -2454,12 +2454,12 @@ export async function POST(req: Request) {
 
         priceData = [
           { symbol: "BTC", name: "Bitcoin", price: fallbackPrices.bitcoin?.usd || 0, image: "https://assets.coingecko.com/coins/images/1/large/bitcoin.png" },
-          { symbol: "ETH", name: "Ethereum", price: fallbackPrices.ethereum?.usd || 0, image: "https://assets.coingecko.com/coins/images/279/large/ethereum.png" },
+          { symbol: "OP", name: "Optimism", price: fallbackPrices.optimism?.usd || 0, image: "https://assets.coingecko.com/coins/images/25244/large/Optimism.png" },
           { symbol: "USDC", name: "USD Coin", price: fallbackPrices["usd-coin"]?.usd || 0, image: "https://assets.coingecko.com/coins/images/6319/large/USD_Coin_icon.png" },
           { symbol: "EURC", name: "Euro Coin", price: fallbackPrices["euro-coin"]?.usd || 0, image: "https://assets.coingecko.com/coins/images/26053/large/eurc.png" }
         ];
 
-        if (requestedAsset && fallbackPrices[requestedAsset] && !["bitcoin", "ethereum", "usd-coin", "euro-coin"].includes(requestedAsset)) {
+        if (requestedAsset && fallbackPrices[requestedAsset] && !["bitcoin", "optimism", "usd-coin", "euro-coin"].includes(requestedAsset)) {
           const symbol = requestedAsset.toUpperCase().substring(0, 4);
           const name = requestedAsset.charAt(0).toUpperCase() + requestedAsset.slice(1);
           priceData.push({ symbol, name, price: fallbackPrices[requestedAsset].usd || 0 });
@@ -2483,7 +2483,7 @@ export async function POST(req: Request) {
       let pulseData: any[] = [];
       const fetchPulse = async () => {
         try {
-          const res = await fetch(`https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=bitcoin,ethereum,solana`);
+          const res = await fetch(`https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=bitcoin,optimism,solana`);
           if (res.ok) {
             const data = await res.json();
             pulseData = data.map((c: any) => ({
@@ -2611,7 +2611,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       success: true,
       intent: "conversation",
-      message: "I'm your DeFi assistant. Try: 'Swap 1 USDC to EURC', 'Bridge USDC to Ethereum', or 'Check my balance'.",
+      message: "I'm your DeFi assistant. Try: 'Swap 1 USDC to EURC', 'Bridge USDC to Optimism', or 'Check my balance'.",
     });
 
   } catch (error: any) {
