@@ -213,7 +213,7 @@ function DashboardInner() {
       twitterHandle={twitterHandle}
       theme={theme}
       toggleTheme={toggleTheme}
-      address={wallet?.address}
+      address={address}
       circleWalletId={wallet?.id}
     >
       {activeTab === "terminal" && (
