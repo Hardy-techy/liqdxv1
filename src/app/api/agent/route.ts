@@ -177,10 +177,10 @@ const TOKEN_ALIASES: Record<string, string> = {
 async function fetchMorphoAPY(): Promise<string> {
   const { createPublicClient, http, parseAbiItem, encodeAbiParameters, keccak256 } = require('viem');
   const rpcClient = createPublicClient({ chain: require('viem/chains').baseSepolia, transport: http() });
-  
+
   const morpho = '0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb';
   const vaultAddress = '0x5c5b62bfae8434ecea66f5a8c6b4ae27a75c6a94';
-  
+
   // Dynamically read the oracle from our Private Vault
   const oracleAddress = await rpcClient.readContract({
     address: vaultAddress as `0x${string}`,
@@ -197,7 +197,7 @@ async function fetchMorphoAPY(): Promise<string> {
   };
 
   const id = keccak256(encodeAbiParameters(
-    [ { type: 'address' }, { type: 'address' }, { type: 'address' }, { type: 'address' }, { type: 'uint256' } ],
+    [{ type: 'address' }, { type: 'address' }, { type: 'address' }, { type: 'address' }, { type: 'uint256' }],
     [marketParams.loanToken, marketParams.collateralToken, marketParams.oracle, marketParams.irm, marketParams.lltv]
   ));
 
@@ -456,7 +456,7 @@ function normalizeIntentFromPrompt(intent: ParsedIntent, prompt: string): Parsed
     destinationDomain: intent.destinationDomain,
   };
 }
-async function parseIntentWithGemini(prompt: string, agentProfile?: string, history: Array<{role: string, content: string}> = []): Promise<ParsedIntent> {
+async function parseIntentWithGemini(prompt: string, agentProfile?: string, history: Array<{ role: string, content: string }> = []): Promise<ParsedIntent> {
   const apiKey = process.env.GEMINI_API_KEY;
 
   if (!apiKey) {
@@ -646,7 +646,7 @@ function parseIntentFallback(prompt: string, agentProfile?: string): ParsedInten
  * Uses Gemini to generate a natural conversational response for non-action queries.
  * Falls back to intelligent keyword-based responses if Gemini is unavailable.
  */
-async function generateConversationalResponse(prompt: string, balances?: string, agentProfile?: string, history: Array<{role: string, content: string}> = []): Promise<string> {
+async function generateConversationalResponse(prompt: string, balances?: string, agentProfile?: string, history: Array<{ role: string, content: string }> = []): Promise<string> {
   const lower = prompt.toLowerCase();
 
   // Intercept @agent help commands before AI generation
@@ -672,7 +672,7 @@ async function generateConversationalResponse(prompt: string, balances?: string,
       try {
         const morphoApy = await fetchMorphoAPY();
         morphoApyStr = `\n- Base Sepolia (Custom Morpho USDC/WETH Market): ${morphoApy}% APY`;
-      } catch (e) {}
+      } catch (e) { }
       apyContext = `Current Live APYs:\n- Arbitrum Sepolia (Aave V3): ${arbApy}\n- Optimism Sepolia (Aave V3): ${opApy}${morphoApyStr}`;
     } catch (e) {
       // Ignore errors, we just won't provide the context
@@ -789,7 +789,7 @@ import { baseSepolia, arbitrumSepolia, optimismSepolia } from 'viem/chains';
 
 async function getUserAaveBalances(walletAddress: string) {
   const yields: any[] = [];
-  
+
   const chainsConfig = [
     { id: 84532, name: "Base Sepolia", chain: baseSepolia as any, rpc: "https://sepolia.base.org" },
     { id: 421614, name: "Arbitrum Sepolia", chain: arbitrumSepolia as any, rpc: "https://sepolia-rollup.arbitrum.io/rpc" },
@@ -855,7 +855,7 @@ async function fetchAaveAPY(chainId: number): Promise<string> {
     421614: "0xBfC91D59fdAA134A4ED45f7B584cAf96D7792Eff",
     11155420: "0xb50201558B00496A145fE76f7424749556E326D8",
   };
-  
+
   const AAVE_TESTNET_USDC: Record<number, string> = {
     84532: "0xba50Cd2A20f6DA35D788639E581bca8d0B5d4D5f",
     421614: "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d",
@@ -869,7 +869,7 @@ async function fetchAaveAPY(chainId: number): Promise<string> {
   try {
     const { createPublicClient, http, encodeFunctionData } = require('viem');
     const { arbitrumSepolia, baseSepolia, optimismSepolia } = require('viem/chains');
-    
+
     let chainObj = optimismSepolia;
     let rpcUrl = "https://sepolia.optimism.io";
     if (chainId === 84532) {
@@ -904,7 +904,7 @@ async function fetchAaveAPY(chainId: number): Promise<string> {
     const rawData = result.data.slice(2);
     const currentLiquidityRateHex = rawData.slice(128, 192);
     const currentLiquidityRate = BigInt('0x' + currentLiquidityRateHex);
-    
+
     if (currentLiquidityRate === BigInt(0)) {
       return "0.00%";
     }
@@ -913,7 +913,7 @@ async function fetchAaveAPY(chainId: number): Promise<string> {
     const SECONDS_PER_YEAR = BigInt(31536000);
     const ratePerSecond = Number(currentLiquidityRate) / Number(RAY) / Number(SECONDS_PER_YEAR);
     const apy = (Math.pow(1 + ratePerSecond, Number(SECONDS_PER_YEAR)) - 1) * 100;
-    
+
     return apy.toFixed(2) + '%';
   } catch (err) {
     console.error(`Failed to fetch Aave APY for chain ${chainId}:`, err);
@@ -1153,9 +1153,9 @@ export async function POST(req: Request) {
         const refId = fromWalletRes.data?.wallet?.refId;
         const userWalletsRes = await client.listWallets({ refId });
         const userWallets = userWalletsRes.data?.wallets || [];
-        
+
         const allBalances: any[] = [];
-        
+
         // Helper to format chain names beautifully
         const formatChainName = (blockchain: string) => {
           if (blockchain === "Arc_Testnet") return "Arc Testnet";
@@ -1173,21 +1173,21 @@ export async function POST(req: Request) {
           if (w.blockchain === "ETH-SEPOLIA") continue; // Hide Ethereum Sepolia from portfolio since LiFi doesn't support it
           const balRes = await client.getWalletTokenBalance({ id: w.id });
           const rawBalances = balRes.data?.tokenBalances || [];
-          
+
           const uniqueBalancesMap = new Map();
           for (const b of rawBalances) {
             const sym = b.token?.symbol || b.token?.name || "Unknown";
             const name = b.token?.name || "";
             const id = b.token?.id || (b as any).tokenAddress || "";
             const identifier = `${sym} ${name} ${id}`.toLowerCase();
-            
+
             // Filter out Aave yield receipt tokens from the main balance view
             if (
-              identifier.includes("aarb") || 
-              identifier.includes("aopt") || 
-              identifier.includes("abase") || 
-              identifier.includes("aeth") || 
-              identifier.includes("ausdc") || 
+              identifier.includes("aarb") ||
+              identifier.includes("aopt") ||
+              identifier.includes("abase") ||
+              identifier.includes("aeth") ||
+              identifier.includes("ausdc") ||
               identifier.includes("aave") ||
               identifier.includes("0x75faf114eafb1bdbe2f0316df893fd58ce46aa4d") || // Arb Sepolia aUSDC
               identifier.includes("0x5fd84259d66cd46123540766be93dfe6d43130d7")    // Opt Sepolia aUSDC
@@ -1218,10 +1218,10 @@ export async function POST(req: Request) {
           if (baseWalletObj) {
             const { createPublicClient, http, parseAbiItem, parseAbi, encodeAbiParameters, keccak256 } = require('viem');
             const rpcClient = createPublicClient({ chain: require('viem/chains').baseSepolia, transport: http() });
-            
+
             const vaultAddress = '0x5c5b62bfae8434ecea66f5a8c6b4ae27a75c6a94';
             const morpho = '0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb';
-            
+
             // Query the Private Vault's shares for this user
             const userShares = await rpcClient.readContract({
               address: vaultAddress as `0x${string}`,
@@ -1229,7 +1229,7 @@ export async function POST(req: Request) {
               functionName: 'shares',
               args: [baseWalletObj.address as `0x${string}`]
             }) as bigint;
-            
+
             if (userShares > BigInt(0)) {
               // Convert vault shares to USDC assets using the underlying Morpho market
               const oracleAddress = await rpcClient.readContract({
@@ -1245,10 +1245,10 @@ export async function POST(req: Request) {
                 lltv: BigInt("860000000000000000")
               };
               const id = keccak256(encodeAbiParameters(
-                [ { type: 'address' }, { type: 'address' }, { type: 'address' }, { type: 'address' }, { type: 'uint256' } ],
+                [{ type: 'address' }, { type: 'address' }, { type: 'address' }, { type: 'address' }, { type: 'uint256' }],
                 [marketParams.loanToken, marketParams.collateralToken, marketParams.oracle, marketParams.irm, marketParams.lltv]
               ));
-              
+
               // Get vault's total position in Morpho Blue
               const vaultPosition = await rpcClient.readContract({
                 address: morpho as `0x${string}`,
@@ -1256,28 +1256,28 @@ export async function POST(req: Request) {
                 functionName: 'position',
                 args: [id, vaultAddress as `0x${string}`]
               }) as [bigint, bigint, bigint];
-              
+
               const marketInfo = await rpcClient.readContract({
                 address: morpho as `0x${string}`,
                 abi: [parseAbiItem('function market(bytes32) view returns (uint128 totalSupplyAssets, uint128 totalSupplyShares, uint128 totalBorrowAssets, uint128 totalBorrowShares, uint128 lastUpdate, uint128 fee)')],
                 functionName: 'market',
                 args: [id]
               }) as [bigint, bigint, bigint, bigint, bigint, bigint];
-              
+
               // Convert Morpho shares to assets for the vault
               const vaultAssets = marketInfo[1] > BigInt(0) ? (vaultPosition[0] * marketInfo[0]) / marketInfo[1] : BigInt(0);
-              
+
               // Get vault's total shares to compute user's proportion
               const totalVaultShares = await rpcClient.readContract({
                 address: vaultAddress as `0x${string}`,
                 abi: parseAbi(['function totalShares() view returns (uint256)']),
                 functionName: 'totalShares',
               }) as bigint;
-              
+
               // User's assets = (userShares / totalVaultShares) * vaultAssets
               const userAssets = totalVaultShares > BigInt(0) ? (userShares * vaultAssets) / totalVaultShares : BigInt(0);
               const formattedAssets = Number(userAssets) / 1e6;
-              
+
               if (formattedAssets > 0.0001) {
                 yields.push({
                   protocol: "Morpho",
@@ -1808,8 +1808,8 @@ export async function POST(req: Request) {
       const destinationChain = intent.destinationChain || "arbitrum";
       let chainId = LIFI_CHAIN_IDS[destinationChain];
       if (!chainId || chainId === 5042002) {
-         // Default to Arbitrum if they don't specify, or if they specify Arc Testnet (since Aave V3 isn't on Arc testnet yet)
-         chainId = 421614; // Arbitrum Sepolia
+        // Default to Arbitrum if they don't specify, or if they specify Arc Testnet (since Aave V3 isn't on Arc testnet yet)
+        chainId = 421614; // Arbitrum Sepolia
       }
 
       const poolAddress = intent.protocol === "morpho" ? "0x5c5b62bfae8434ecea66f5a8c6b4ae27a75c6a94" : AAVE_POOL_ADDRESSES[chainId];
@@ -1830,7 +1830,7 @@ export async function POST(req: Request) {
         "3": "ARB-SEPOLIA",
         "6": "BASE-SEPOLIA",
       };
-      
+
       const domainMap: Record<number, string> = {
         11155420: "2",
         421614: "3",
@@ -1853,11 +1853,11 @@ export async function POST(req: Request) {
             sourceWalletId = sourceWalletObj.id;
             sourceAddress = sourceWalletObj.address;
           } else {
-             return NextResponse.json({
-               success: false,
-               intent: "yield",
-               message: `You don't have a wallet created on ${chainName} yet. Please bridge some funds there first.`,
-             });
+            return NextResponse.json({
+              success: false,
+              intent: "yield",
+              message: `You don't have a wallet created on ${chainName} yet. Please bridge some funds there first.`,
+            });
           }
         }
       } catch (err) {
@@ -1895,7 +1895,7 @@ export async function POST(req: Request) {
       }
 
       const amountInUnits = Math.floor(parseFloat(yieldAmount) * 1e6).toString();
-      
+
       try {
         // Fetch APY dynamically
         const apy = intent.protocol === "morpho" ? await fetchMorphoAPY() : await fetchAaveAPY(chainId);
@@ -1928,7 +1928,7 @@ export async function POST(req: Request) {
                 console.error(`[Yield] Approve tx failed with reason: ${res.data?.transaction?.errorReason}`);
                 break;
               }
-            } catch (e) {}
+            } catch (e) { }
             await new Promise(resolve => setTimeout(resolve, 1000));
           }
           if (!approved) {
@@ -1942,14 +1942,14 @@ export async function POST(req: Request) {
           // Auto-Whitelist logic using the Admin Key from deploy-key.txt
           const { createWalletClient, createPublicClient, http, parseAbi } = require('viem');
           const { privateKeyToAccount } = require('viem/accounts');
-          
+
           try {
             const pk = process.env.VAULT_DEPLOYER_KEY;
             if (!pk) throw new Error('VAULT_DEPLOYER_KEY not set');
             const adminAccount = privateKeyToAccount(pk as `0x${string}`);
             const rpcClient = createPublicClient({ chain: require('viem/chains').baseSepolia, transport: http() });
             const adminWalletClient = createWalletClient({ account: adminAccount, chain: require('viem/chains').baseSepolia, transport: http() });
-            
+
             const vaultAbi = parseAbi(['function isWhitelisted(address) view returns (bool)', 'function addToWhitelist(address)']);
             const isWhitelisted = await rpcClient.readContract({
               address: poolAddress as `0x${string}`,
@@ -2086,7 +2086,7 @@ export async function POST(req: Request) {
         "3": "ARB-SEPOLIA",
         "6": "BASE-SEPOLIA",
       };
-      
+
       const domainMap: Record<number, string> = {
         11155420: "2",
         421614: "3",
@@ -2109,11 +2109,11 @@ export async function POST(req: Request) {
             sourceWalletId = sourceWalletObj.id;
             sourceAddress = sourceWalletObj.address;
           } else {
-             return NextResponse.json({
-               success: false,
-               intent: "withdraw_yield",
-               message: `You don't have a wallet created on ${chainName} yet.`,
-             });
+            return NextResponse.json({
+              success: false,
+              intent: "withdraw_yield",
+              message: `You don't have a wallet created on ${chainName} yet.`,
+            });
           }
         }
       } catch (err) {
@@ -2129,11 +2129,11 @@ export async function POST(req: Request) {
       } else {
         const balanceNum = parseFloat(withdrawAmount);
         if (balanceNum <= 0) {
-           return NextResponse.json({
-             success: false,
-             intent: "withdraw_yield",
-             message: `Please specify a valid amount to withdraw.`,
-           });
+          return NextResponse.json({
+            success: false,
+            intent: "withdraw_yield",
+            message: `Please specify a valid amount to withdraw.`,
+          });
         }
         amountInUnits = Math.floor(balanceNum * 1e6).toString();
       }
@@ -2141,113 +2141,113 @@ export async function POST(req: Request) {
       try {
         let txId;
         if (intent.protocol === "morpho") {
-           const { createPublicClient, http, parseAbi, parseAbiItem } = require('viem');
-           const rpcClient = createPublicClient({ chain: require('viem/chains').baseSepolia, transport: http() });
-           
-           // ====== STEP 1: AUTO-REPAYER — Free up liquidity before user withdraws ======
-           console.log(`[Auto-Repayer] Checking bot's debt before user withdrawal...`);
-           await triggerAutoRepayer();
-           console.log(`[Auto-Repayer] Liquidity freed. Proceeding with user withdrawal.`);
+          const { createPublicClient, http, parseAbi, parseAbiItem } = require('viem');
+          const rpcClient = createPublicClient({ chain: require('viem/chains').baseSepolia, transport: http() });
 
-           // ====== STEP 2: WITHDRAW FROM PRIVATE VAULT ======
-           let withdrawSig: string;
-           let withdrawParams: string[];
+          // ====== STEP 1: AUTO-REPAYER — Free up liquidity before user withdraws ======
+          console.log(`[Auto-Repayer] Checking bot's debt before user withdrawal...`);
+          await triggerAutoRepayer();
+          console.log(`[Auto-Repayer] Liquidity freed. Proceeding with user withdrawal.`);
 
-           if (intent.useAll) {
-             // Get user's shares from the Private Vault
-             const userShares = await rpcClient.readContract({
-               address: poolAddress as `0x${string}`,
-               abi: parseAbi(['function shares(address) view returns (uint256)']),
-               functionName: 'shares',
-               args: [sourceAddress as `0x${string}`]
-             });
+          // ====== STEP 2: WITHDRAW FROM PRIVATE VAULT ======
+          let withdrawSig: string;
+          let withdrawParams: string[];
 
-             if (userShares === BigInt(0)) {
-               return NextResponse.json({
-                 success: false,
-                 intent: "withdraw_yield",
-                 message: `You don't have any funds to withdraw from Morpho Vault on Base Sepolia.`,
-               });
-             }
+          if (intent.useAll) {
+            // Get user's shares from the Private Vault
+            const userShares = await rpcClient.readContract({
+              address: poolAddress as `0x${string}`,
+              abi: parseAbi(['function shares(address) view returns (uint256)']),
+              functionName: 'shares',
+              args: [sourceAddress as `0x${string}`]
+            });
 
-             console.log(`[Vault] User has ${userShares} shares. Withdrawing all...`);
-             withdrawSig = "withdraw(uint256,address)";
-             withdrawParams = [userShares.toString(), sourceAddress];
-           } else {
-             console.log(`[Vault] Withdrawing ${amountInUnits} USDC from Private Vault for ${sourceAddress}`);
-             withdrawSig = "withdrawAssets(uint256,address)";
-             withdrawParams = [amountInUnits, sourceAddress];
-           }
+            if (userShares === BigInt(0)) {
+              return NextResponse.json({
+                success: false,
+                intent: "withdraw_yield",
+                message: `You don't have any funds to withdraw from Morpho Vault on Base Sepolia.`,
+              });
+            }
 
-           const withdrawResponse = await client.createContractExecutionTransaction({
-             walletId: sourceWalletId,
-             contractAddress: poolAddress,
-             abiFunctionSignature: withdrawSig,
-             abiParameters: withdrawParams,
-             fee: { type: "level", config: { feeLevel: "MEDIUM" } },
-           });
-           txId = withdrawResponse.data?.id;
+            console.log(`[Vault] User has ${userShares} shares. Withdrawing all...`);
+            withdrawSig = "withdraw(uint256,address)";
+            withdrawParams = [userShares.toString(), sourceAddress];
+          } else {
+            console.log(`[Vault] Withdrawing ${amountInUnits} USDC from Private Vault for ${sourceAddress}`);
+            withdrawSig = "withdrawAssets(uint256,address)";
+            withdrawParams = [amountInUnits, sourceAddress];
+          }
 
-           // ====== STEP 3: RE-PUMP remaining funds after withdrawal (async, no delay) ======
-           (async () => {
-             try {
-               const totalAssets = await rpcClient.readContract({
-                 address: poolAddress as `0x${string}`,
-                 abi: parseAbi(['function totalShares() view returns (uint256)']),
-                 functionName: 'totalShares',
-               });
-               if (totalAssets > BigInt(0)) {
-                 // There are still funds in the vault, check how much USDC the vault has in the market
-                 const vaultAddress = poolAddress as `0x${string}`;
-                 const morphoBlue = '0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb' as `0x${string}`;
-                 const oracleAddress = await rpcClient.readContract({
-                   address: vaultAddress,
-                   abi: [parseAbiItem('function mockOracle() view returns (address)')],
-                   functionName: 'mockOracle'
-                 });
-                 const { keccak256, encodeAbiParameters } = require('viem');
-                 const mktParams = {
-                   loanToken: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
-                   collateralToken: '0x4200000000000000000000000000000000000006',
-                   oracle: oracleAddress,
-                   irm: '0x46415998764C29aB2a25CbeA6254146D50D22687',
-                   lltv: BigInt('860000000000000000')
-                 };
-                 const marketId = keccak256(encodeAbiParameters(
-                   [{ type: 'address' }, { type: 'address' }, { type: 'address' }, { type: 'address' }, { type: 'uint256' }],
-                   [mktParams.loanToken, mktParams.collateralToken, mktParams.oracle, mktParams.irm, mktParams.lltv]
-                 ));
-                 const market = await rpcClient.readContract({
-                   address: morphoBlue,
-                   abi: [parseAbiItem('function market(bytes32) view returns (uint128 totalSupplyAssets, uint128 totalSupplyShares, uint128 totalBorrowAssets, uint128 totalBorrowShares, uint128 lastUpdate, uint128 fee)')],
-                   functionName: 'market',
-                   args: [marketId]
-                 }) as [bigint, bigint, bigint, bigint, bigint, bigint];
-                 const totalSupply = market[0];
-                 const totalBorrow = market[2];
-                 const idle = totalSupply - totalBorrow;
-                 if (idle > BigInt(0)) {
-                   const rePumpAmount = (idle * BigInt(90)) / BigInt(100);
-                   if (rePumpAmount > BigInt(0)) {
-                     console.log(`[Auto-Pumper] Re-pumping ${rePumpAmount} USDC after withdrawal...`);
-                     await triggerAutoPumper(rePumpAmount);
-                   }
-                 }
-               }
-             } catch (err) {
-               console.error("[Auto-Pumper] Re-pump after withdrawal failed:", err);
-             }
-           })();
+          const withdrawResponse = await client.createContractExecutionTransaction({
+            walletId: sourceWalletId,
+            contractAddress: poolAddress,
+            abiFunctionSignature: withdrawSig,
+            abiParameters: withdrawParams,
+            fee: { type: "level", config: { feeLevel: "MEDIUM" } },
+          });
+          txId = withdrawResponse.data?.id;
+
+          // ====== STEP 3: RE-PUMP remaining funds after withdrawal (async, no delay) ======
+          (async () => {
+            try {
+              const totalAssets = await rpcClient.readContract({
+                address: poolAddress as `0x${string}`,
+                abi: parseAbi(['function totalShares() view returns (uint256)']),
+                functionName: 'totalShares',
+              });
+              if (totalAssets > BigInt(0)) {
+                // There are still funds in the vault, check how much USDC the vault has in the market
+                const vaultAddress = poolAddress as `0x${string}`;
+                const morphoBlue = '0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb' as `0x${string}`;
+                const oracleAddress = await rpcClient.readContract({
+                  address: vaultAddress,
+                  abi: [parseAbiItem('function mockOracle() view returns (address)')],
+                  functionName: 'mockOracle'
+                });
+                const { keccak256, encodeAbiParameters } = require('viem');
+                const mktParams = {
+                  loanToken: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
+                  collateralToken: '0x4200000000000000000000000000000000000006',
+                  oracle: oracleAddress,
+                  irm: '0x46415998764C29aB2a25CbeA6254146D50D22687',
+                  lltv: BigInt('860000000000000000')
+                };
+                const marketId = keccak256(encodeAbiParameters(
+                  [{ type: 'address' }, { type: 'address' }, { type: 'address' }, { type: 'address' }, { type: 'uint256' }],
+                  [mktParams.loanToken, mktParams.collateralToken, mktParams.oracle, mktParams.irm, mktParams.lltv]
+                ));
+                const market = await rpcClient.readContract({
+                  address: morphoBlue,
+                  abi: [parseAbiItem('function market(bytes32) view returns (uint128 totalSupplyAssets, uint128 totalSupplyShares, uint128 totalBorrowAssets, uint128 totalBorrowShares, uint128 lastUpdate, uint128 fee)')],
+                  functionName: 'market',
+                  args: [marketId]
+                }) as [bigint, bigint, bigint, bigint, bigint, bigint];
+                const totalSupply = market[0];
+                const totalBorrow = market[2];
+                const idle = totalSupply - totalBorrow;
+                if (idle > BigInt(0)) {
+                  const rePumpAmount = (idle * BigInt(90)) / BigInt(100);
+                  if (rePumpAmount > BigInt(0)) {
+                    console.log(`[Auto-Pumper] Re-pumping ${rePumpAmount} USDC after withdrawal...`);
+                    await triggerAutoPumper(rePumpAmount);
+                  }
+                }
+              }
+            } catch (err) {
+              console.error("[Auto-Pumper] Re-pump after withdrawal failed:", err);
+            }
+          })();
         } else {
-           console.log(`[Aave] Withdrawing ${amountInUnits} USDC from Pool ${poolAddress} on behalf of ${sourceAddress}`);
-           const withdrawResponse = await client.createContractExecutionTransaction({
-             walletId: sourceWalletId,
-             contractAddress: poolAddress,
-             abiFunctionSignature: "withdraw(address,uint256,address)",
-             abiParameters: [usdcAddress, amountInUnits, sourceAddress],
-             fee: { type: "level", config: { feeLevel: "MEDIUM" } },
-           });
-           txId = withdrawResponse.data?.id;
+          console.log(`[Aave] Withdrawing ${amountInUnits} USDC from Pool ${poolAddress} on behalf of ${sourceAddress}`);
+          const withdrawResponse = await client.createContractExecutionTransaction({
+            walletId: sourceWalletId,
+            contractAddress: poolAddress,
+            abiFunctionSignature: "withdraw(address,uint256,address)",
+            abiParameters: [usdcAddress, amountInUnits, sourceAddress],
+            fee: { type: "level", config: { feeLevel: "MEDIUM" } },
+          });
+          txId = withdrawResponse.data?.id;
         }
 
         const realTxHash = await pollForTxHash(client, txId || "");
@@ -2259,7 +2259,7 @@ export async function POST(req: Request) {
           .eq("wallet_address", walletAddress)
           .eq("protocol", intent.protocol === "morpho" ? "morpho" : "aave")
           .eq("status", "active");
-        
+
         let exactPrincipal = 2.0; // fallback
         if (positions && positions.length > 0) {
           exactPrincipal = positions.reduce((sum, pos) => sum + Number(pos.principal_amount), 0);
@@ -2323,7 +2323,7 @@ export async function POST(req: Request) {
       try {
         const { createPublicClient, http, parseAbiItem, encodeAbiParameters, keccak256 } = require('viem');
         const rpcClient = createPublicClient({ chain: require('viem/chains').baseSepolia, transport: http() });
-        
+
         const morpho = '0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb';
         const marketParams = {
           loanToken: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
@@ -2334,7 +2334,7 @@ export async function POST(req: Request) {
         };
 
         const id = keccak256(encodeAbiParameters(
-          [ { type: 'address' }, { type: 'address' }, { type: 'address' }, { type: 'address' }, { type: 'uint256' } ],
+          [{ type: 'address' }, { type: 'address' }, { type: 'address' }, { type: 'address' }, { type: 'uint256' }],
           [marketParams.loanToken, marketParams.collateralToken, marketParams.oracle, marketParams.irm, marketParams.lltv]
         ));
 
@@ -2379,13 +2379,13 @@ export async function POST(req: Request) {
     if (intent.action === "yield_options") {
       try {
         const morphoAPY = await fetchMorphoAPY();
-        
+
         let aaveArbAPY = "Temporarily Unavailable";
-        try { aaveArbAPY = await fetchAaveAPY(421614); } catch(e) {}
-        
+        try { aaveArbAPY = await fetchAaveAPY(421614); } catch (e) { }
+
         let aaveOpAPY = "Temporarily Unavailable";
-        try { aaveOpAPY = await fetchAaveAPY(11155420); } catch(e) {}
-        
+        try { aaveOpAPY = await fetchAaveAPY(11155420); } catch (e) { }
+
         const data = [
           { protocol: "Aave V3", apy: aaveArbAPY, chain: "Arbitrum Sepolia", asset: "USDC" },
           { protocol: "Aave V3", apy: aaveOpAPY, chain: "Optimism Sepolia", asset: "USDC" },
@@ -2413,7 +2413,7 @@ export async function POST(req: Request) {
     if (intent.action === "price") {
       let prices: any = null;
       const requestedAsset = intent.targetAsset?.toLowerCase() || "solana";
-      
+
       // Default baseline assets
       const idsToFetch = ["bitcoin", "optimism", "usd-coin", "euro-coin"];
       if (requestedAsset && !idsToFetch.includes(requestedAsset)) {
@@ -2427,10 +2427,10 @@ export async function POST(req: Request) {
         const cgRes = await fetch(`https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${idsToFetch.join(',')}`, { signal: controller.signal });
         clearTimeout(timeoutId);
         if (cgRes.ok) prices = await cgRes.json();
-      } catch (e) { 
-        console.error("CoinGecko error, using fallbacks"); 
+      } catch (e) {
+        console.error("CoinGecko error, using fallbacks");
       }
-      
+
       let priceData: any[] = [];
 
       // If we got a valid array response from CoinGecko, use it dynamically
@@ -2508,7 +2508,7 @@ export async function POST(req: Request) {
             item: ['media:content', 'enclosure', 'content:encoded', 'description'],
           }
         });
-        
+
         const feeds = [
           { url: "https://www.coindesk.com/arc/outboundfeeds/rss/", source: "CoinDesk" },
           { url: "https://cointelegraph.com/rss", source: "CoinTelegraph" },
@@ -2529,7 +2529,7 @@ export async function POST(req: Request) {
                 const match = html.match(/<img[^>]+src="([^">]+)"/);
                 if (match) thumbnail = match[1];
               }
-              
+
               return {
                 title: item.title,
                 link: item.link,
@@ -2626,20 +2626,20 @@ export async function POST(req: Request) {
 async function triggerAutoPumper(amountToBorrow: bigint) {
   const { createWalletClient, createPublicClient, http, parseAbi, parseAbiItem } = require('viem');
   const { privateKeyToAccount } = require('viem/accounts');
-  
+
   const pk = process.env.VAULT_DEPLOYER_KEY;
   if (!pk) {
     console.warn("[Auto-Pumper] Skipped: VAULT_DEPLOYER_KEY is not set.");
     return;
   }
   const account = privateKeyToAccount(pk.startsWith('0x') ? pk : `0x${pk}`);
-  
+
   const rpcClient = createPublicClient({ chain: require('viem/chains').baseSepolia, transport: http() });
   const walletClient = createWalletClient({ account, chain: require('viem/chains').baseSepolia, transport: http() });
 
   const morphoBlue = '0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb';
   const vaultAddress = '0x5c5b62bfae8434ecea66f5a8c6b4ae27a75c6a94';
-  
+
   const oracleAddress = await rpcClient.readContract({
     address: vaultAddress as `0x${string}`,
     abi: [parseAbiItem('function mockOracle() view returns (address)')],
@@ -2659,7 +2659,7 @@ async function triggerAutoPumper(amountToBorrow: bigint) {
   ]);
 
   console.log(`[Auto-Pumper] Triggered! Borrowing ${amountToBorrow} USDC in the background to pump APY...`);
-  
+
   // The deployer wallet already has infinite collateral supplied from the initial setup
   const hash = await walletClient.writeContract({
     address: morphoBlue as `0x${string}`,
@@ -2667,7 +2667,7 @@ async function triggerAutoPumper(amountToBorrow: bigint) {
     functionName: 'borrow',
     args: [marketParams, amountToBorrow, BigInt(0), account.address, account.address]
   });
-  
+
   await rpcClient.waitForTransactionReceipt({ hash });
   console.log(`[Auto-Pumper] APY Pumped successfully! Hash: ${hash}`);
 }
@@ -2678,21 +2678,21 @@ async function triggerAutoPumper(amountToBorrow: bigint) {
 async function triggerAutoRepayer() {
   const { createWalletClient, createPublicClient, http, parseAbi, parseAbiItem, keccak256, encodeAbiParameters } = require('viem');
   const { privateKeyToAccount } = require('viem/accounts');
-  
+
   const pk = process.env.VAULT_DEPLOYER_KEY;
   if (!pk) {
     console.warn("[Auto-Repayer] Skipped: VAULT_DEPLOYER_KEY is not set.");
     return;
   }
   const account = privateKeyToAccount(pk.startsWith('0x') ? pk : `0x${pk}`);
-  
+
   const rpcClient = createPublicClient({ chain: require('viem/chains').baseSepolia, transport: http() });
   const walletClient = createWalletClient({ account, chain: require('viem/chains').baseSepolia, transport: http() });
 
   const morphoBlue = '0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb' as `0x${string}`;
   const usdcAddress = '0x036CbD53842c5426634e7929541eC2318f3dCF7e' as `0x${string}`;
   const vaultAddress = '0x5c5b62bfae8434ecea66f5a8c6b4ae27a75c6a94' as `0x${string}`;
-  
+
   const oracleAddress = await rpcClient.readContract({
     address: vaultAddress,
     abi: [parseAbiItem('function mockOracle() view returns (address)')],
@@ -2759,7 +2759,7 @@ async function triggerAutoRepayer() {
     args: [marketParams, BigInt(0), borrowShares, account.address, '0x']
   });
   await rpcClient.waitForTransactionReceipt({ hash: repayHash });
-  
+
   console.log(`[Auto-Repayer] Debt repaid successfully! Hash: ${repayHash}`);
 }
 
@@ -2770,7 +2770,7 @@ async function pollAndConfirmYield(txHash: string, exactPrincipal: number, walle
   try {
     const { createPublicClient, http, decodeEventLog, parseAbiItem } = require('viem');
     const rpcClient = createPublicClient({ chain: require('viem/chains').baseSepolia, transport: http() });
-    
+
     let receipt = null;
     for (let i = 0; i < 60; i++) {
       try {
@@ -2784,7 +2784,7 @@ async function pollAndConfirmYield(txHash: string, exactPrincipal: number, walle
 
     const transferAbi = parseAbiItem('event Transfer(address indexed from, address indexed to, uint256 value)');
     const usdcAddress = '0x036CbD53842c5426634e7929541eC2318f3dCF7e';
-    
+
     let totalReceived = BigInt(0);
     for (const log of receipt.logs) {
       if (log.address.toLowerCase() === usdcAddress.toLowerCase()) {
@@ -2796,7 +2796,7 @@ async function pollAndConfirmYield(txHash: string, exactPrincipal: number, walle
               totalReceived += (decoded.args as any).value;
             }
           }
-        } catch(e) {}
+        } catch (e) { }
       }
     }
 
@@ -2804,16 +2804,16 @@ async function pollAndConfirmYield(txHash: string, exactPrincipal: number, walle
     if (exactReceivedFloat <= 0) {
       exactReceivedFloat = exactPrincipal + 0.000333; // fallback
     }
-    
+
     let exactYield = exactReceivedFloat - exactPrincipal;
     if (exactYield <= 0) exactYield = 0.000128; // fallback
 
     await supabase.from("transaction_logs")
       .update({ status: 'success', exact_yield: exactYield, confirmed_at: new Date().toISOString() })
       .eq('tx_id', txId);
-      
+
     console.log(`[Yield Confirmer] Success! Yield: ${exactYield} USDC`);
-  } catch(err) {
+  } catch (err) {
     console.error("[Yield Confirmer] Error:", err);
   }
 }

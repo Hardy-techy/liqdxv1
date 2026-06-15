@@ -13,8 +13,8 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Liqdx - AI Treasury",
-  description: "Agentic DeFi operations on Arc Testnet",
+  title: "Liqdx - The intelligence behind your liquidity",
+  description: "The smart portfolio & cross-chain agent.",
 };
 
 export default function RootLayout({
