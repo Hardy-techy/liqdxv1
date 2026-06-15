@@ -17,16 +17,6 @@ export function useTransactionHistory(messages: ChatMessage[]) {
       const data = await res.json();
 
       const txs = data.transactions || [];
-      // Pad with mock transactions so the UI can perfectly render 3 items for demonstration
-      if (txs.length === 0) {
-        txs.push({ intent: "swap", created_at: new Date(Date.now() - 3600000).toISOString(), status: "success", tx_hash: "mock1" });
-      }
-      if (txs.length < 2) {
-        txs.push({ intent: "deposit", created_at: new Date(Date.now() - 86400000).toISOString(), status: "success", tx_hash: "mock2" });
-      }
-      if (txs.length < 3) {
-        txs.push({ intent: "bridge", created_at: new Date(Date.now() - 86400000 * 2).toISOString(), status: "success", tx_hash: "mock3" });
-      }
 
       setTxHistory(txs);
     } catch (e) {

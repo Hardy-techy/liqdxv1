@@ -90,7 +90,7 @@ export async function POST(req: Request) {
       const supabase = getSupabaseAdmin();
       await supabase.from("profiles")
         .update({ circle_wallet_id: arcWallet.address })
-        .eq("wallet_address", auth.session.address);
+        .ilike("wallet_address", auth.session.address);
     }
 
     return NextResponse.json({ 

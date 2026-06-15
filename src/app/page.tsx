@@ -31,16 +31,16 @@ function DashboardInner() {
   const fetchTxHistoryRef = useRef<any>(null);
 
   // Custom Hooks
-  const { 
+  const {
     isAuthenticated,
     isAuthenticating,
-    wallet, 
-    wallets, 
-    twitterHandle, 
-    authError, 
-    setAuthError, 
-    renderErrorToast, 
-    credits, 
+    wallet,
+    wallets,
+    twitterHandle,
+    authError,
+    setAuthError,
+    renderErrorToast,
+    credits,
     setCredits,
     topUpLoading,
     setTopUpLoading
@@ -60,14 +60,14 @@ function DashboardInner() {
     loadChatSessionsAndOpenRecent,
     handleChatSubmit,
     isLoadingSession,
-  } = useChatSession({ 
-    address, 
-    wallet, 
-    setActiveTab, 
+  } = useChatSession({
+    address,
+    wallet,
+    setActiveTab,
     fetchBalance: (id: string) => fetchBalanceRef.current?.(id),
     fetchTxHistory: (addr: string) => fetchTxHistoryRef.current?.(addr),
-    setAuthError, 
-    setCredits 
+    setAuthError,
+    setCredits
   });
 
   const {
@@ -242,7 +242,7 @@ function DashboardInner() {
           setIsDropdownOpen={setIsDropdownOpen}
         />
       )}
-      
+
       {activeTab === "intelligence" && (
         <IntelligenceView
           startNewChat={startNewChat}
