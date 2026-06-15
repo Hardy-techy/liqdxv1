@@ -214,6 +214,7 @@ function DashboardInner() {
       theme={theme}
       toggleTheme={toggleTheme}
       address={wallet?.address}
+      circleWalletId={wallet?.id}
     >
       {activeTab === "terminal" && (
         <TerminalView

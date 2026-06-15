@@ -10,6 +10,7 @@ interface DashboardLayoutProps {
   theme: string;
   toggleTheme: () => void;
   address?: string;
+  circleWalletId?: string;
 }
 
 export function DashboardLayout({
@@ -20,7 +21,8 @@ export function DashboardLayout({
   twitterHandle,
   theme,
   toggleTheme,
-  address
+  address,
+  circleWalletId
 }: DashboardLayoutProps) {
   return (
     <div className="flex flex-col h-screen max-h-screen bg-[#F6F8FA] dark:bg-[#09090b] text-zinc-900 dark:text-zinc-100 font-sans antialiased overflow-hidden relative transition-colors">
@@ -73,7 +75,16 @@ export function DashboardLayout({
                 </span>
               </div>
             ) : (
-              <button className="flex items-center gap-1.5 px-4 h-10 bg-white dark:bg-[#1A1A1A] border border-black/5 dark:border-white/10 rounded-[8px] text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white transition-colors">
+              <button 
+                onClick={() => {
+                  if (address && circleWalletId) {
+                    window.location.href = `/api/auth/twitter/login?address=${address}&walletId=${circleWalletId}`;
+                  } else if (address) {
+                    window.location.href = `/api/auth/twitter/login?address=${address}&walletId=pending`;
+                  }
+                }}
+                className="flex items-center gap-1.5 px-4 h-10 bg-white dark:bg-[#1A1A1A] border border-black/5 dark:border-white/10 rounded-[8px] text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white transition-colors"
+              >
                 <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
                 <span className="text-[14px] font-medium">Connect X</span>
               </button>
