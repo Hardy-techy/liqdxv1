@@ -141,6 +141,19 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Too many requests. Please wait a moment." }, { status: 429 });
       }
 
+      // SECURITY: Low Balance Threshold. Prevent hoarding/stacking packages.
+      // Must have < 5 credits to purchase a new package.
+      const { data: currentBalance } = await supabase
+        .from("credits_balances")
+        .select("balance")
+        .eq("wallet_address", walletAddress)
+        .single();
+      
+      const balanceVal = currentBalance ? parseFloat(currentBalance.balance as any) : 0;
+      if (balanceVal >= 5) {
+        return NextResponse.json({ error: "You must use your existing balance (below 5 credits) before purchasing more." }, { status: 403 });
+      }
+
       const pkg = CREDIT_PACKAGES[packageId];
 
       if (!TREASURY_ADDRESS) {

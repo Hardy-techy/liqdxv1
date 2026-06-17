@@ -149,11 +149,11 @@ export function CreditsView({
                   <div className="flex flex-col gap-2">
                     <Button
                       variant={pkg.popular ? "default" : "outline"}
-                      className={`w-full h-10 text-[13px] font-bold rounded-xl transition-all ${pkg.popular && credits <= 0 ? 'bg-[#0066FF] hover:bg-blue-600 text-white shadow-sm hover:shadow-md hover:shadow-[#0066FF]/20' : ''}`}
-                      disabled={topUpLoading || credits > 0}
+                      className={`w-full h-10 text-[13px] font-bold rounded-xl transition-all ${pkg.popular && credits < 5 ? 'bg-[#0066FF] hover:bg-blue-600 text-white shadow-sm hover:shadow-md hover:shadow-[#0066FF]/20' : ''}`}
+                      disabled={topUpLoading || credits >= 5}
                       onClick={async () => {
-                        if (credits > 0) {
-                          setAuthError("You must finish your current credits before purchasing more.");
+                        if (credits >= 5) {
+                          setAuthError("You must use your existing balance (below 5 credits) before purchasing more.");
                           setTimeout(() => setAuthError(null), 6000);
                           return;
                         }
@@ -174,9 +174,9 @@ export function CreditsView({
                     >
                       Purchase Package
                     </Button>
-                    {credits > 0 && (
+                    {credits >= 5 && (
                       <span className="text-[10px] text-center font-medium text-zinc-400 dark:text-zinc-500">
-                        Available when balance reaches 0
+                        Available when balance drops below 5
                       </span>
                     )}
                   </div>

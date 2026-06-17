@@ -59,7 +59,7 @@ export const PendingIndicator = ({ userText }: { userText: string }) => {
   let specializedMessages: string[] = [];
   if (isBridge) {
     specializedMessages = [
-      "Fetching best cross-chain route via LI.FI...",
+      "Fetching best cross-chain route...",
       "Securing optimal bridge price...",
       "Approving USDC transfer...",
       "Executing cross-chain transaction...",

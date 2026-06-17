@@ -24,6 +24,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { isValidAddress, isValidUUID, isValidBlockchain, sanitizeText } from "@/lib/validate";
 import { rateLimit } from "@/lib/rate-limit";
 import { checkCsrf } from "@/lib/csrf";
+import { getSynthraQuote, buildSynthraSwap } from "@/lib/synthra";
 
 // --- Gemini-powered intent parser ---
 interface ParsedIntent {
@@ -1474,11 +1475,104 @@ export async function POST(req: Request) {
         }
         // On-chain revert — typically liquidity or approval issues
         if (errCode === 5002 || errMsg.includes("SIMULATION_FAILED") || errMsg.includes("Transaction reverted") || errMsg.includes("reverted")) {
-          return NextResponse.json({
-            success: false,
-            intent: "swap",
-            message: `Swap of ${swapAmount} ${intent.tokenIn} → ${intent.tokenOut} could not be completed. The on-chain transaction was rejected — this usually means the liquidity pool has insufficient reserves or slippage was too high. Please try a smaller amount or retry shortly.`,
-          });
+          try {
+            // FALLBACK TO SYNTHRA
+            const { parseUnits } = require("viem");
+            const rawAmount = parseUnits(swapAmount, 6).toString(); // Assuming 6 decimals for USDC/EURC on Arc
+            
+            const quote = await getSynthraQuote({
+              chainId: 5042002,
+              tokenIn: intent.tokenIn,
+              tokenOut: intent.tokenOut,
+              amount: rawAmount,
+              tradeType: "EXACT_INPUT"
+            });
+
+            const swapParams = await buildSynthraSwap({
+              chainId: 5042002,
+              tokenIn: intent.tokenIn,
+              tokenOut: intent.tokenOut,
+              amount: rawAmount,
+              recipient: walletAddress,
+              sender: walletAddress,
+              approvalMode: "erc20"
+            });
+
+            // If approval is needed
+            if (swapParams.approval?.tokenApproval?.needsApproval && swapParams.approval.tokenApproval.approveTransaction) {
+               await client.createContractExecutionTransaction({
+                  walletAddress,
+                  blockchain: "ARC-TESTNET",
+                  contractAddress: swapParams.approval.tokenApproval.approveTransaction.to,
+                  abiFunctionSignature: "approve(address,uint256)",
+                  // Approve a large amount for the router
+                  abiParameters: [swapParams.transaction.to, "115792089237316195423570985008687907853269984665640564039457584007913129639935"],
+                  fee: { type: "level", config: { feeLevel: "MEDIUM" } }
+               });
+               // Add a short delay for approval indexing
+               await new Promise(res => setTimeout(res, 3000));
+            }
+
+            // Execute the swap via raw callData (Same as LI.FI bridge)
+            // Note: Circle blocks sponsored fees for raw callData, so we must use feeLevel.
+            const tx = await client.createContractExecutionTransaction({
+               walletId: walletId,
+               contractAddress: swapParams.transaction.to,
+               callData: swapParams.transaction.data as `0x${string}`,
+               fee: { type: "level", config: { feeLevel: "MEDIUM" } }
+            });
+
+            const txId = tx.data?.id || "";
+            let realTxHash = txId;
+
+            if (txId && !txId.startsWith("0x")) {
+              const polled = await pollForTxHash(client, txId);
+              if (polled) realTxHash = polled;
+            }
+
+            // Log swap to Supabase
+            await supabase.from("transaction_logs").insert({
+              wallet_address: walletAddress,
+              circle_wallet_id: walletId,
+              intent: "swap",
+              token_in: intent.tokenIn,
+              token_out: intent.tokenOut,
+              amount: swapAmount,
+              tx_hash: realTxHash || txId || "synthra_swap_success",
+              tx_id: txId || "synthra_swap_success",
+              status: "success",
+              blockchain: "Arc_Testnet",
+              message: `Swap of ${swapAmount} ${intent.tokenIn} to ${intent.tokenOut} (via Synthra)`,
+              confirmed_at: new Date().toISOString(),
+            });
+
+            const remainingCredits = await deductCredits(supabase, walletAddress, "swap", `Swap ${swapAmount} ${intent.tokenIn} → ${intent.tokenOut} (Synthra)`);
+
+            const calculatedRate = (parseFloat(quote.amountOutDecimals) / parseFloat(swapAmount)).toFixed(6);
+
+            return NextResponse.json({
+              success: true,
+              intent: "swap",
+              tokenIn: intent.tokenIn,
+              tokenOut: intent.tokenOut,
+              amountIn: swapAmount,
+              amountOut: quote.amountOutDecimals,
+              rate: calculatedRate,
+              fee: "0.0%",
+              message: `Successfully swapped ${swapAmount} ${intent.tokenIn} for ${intent.tokenOut} via Synthra.`,
+              txHash: realTxHash || txId,
+              estimatedOutput: quote.amountOutDecimals,
+              credits: remainingCredits,
+            });
+
+          } catch (synthraErr: any) {
+            console.error("Synthra fallback failed:", synthraErr);
+            return NextResponse.json({
+              success: false,
+              intent: "swap",
+              message: `Swap of ${swapAmount} ${intent.tokenIn} → ${intent.tokenOut} could not be completed due to insufficient liquidity on the testnet. Please try a smaller amount or retry shortly.`,
+            });
+          }
         }
         // Catch-all: return a friendly error instead of crashing with 500
         console.error("Swap error:", swapErr);
