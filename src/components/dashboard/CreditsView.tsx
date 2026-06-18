@@ -153,7 +153,7 @@ export function CreditsView({
                       disabled={topUpLoading || credits >= 5}
                       onClick={async () => {
                         if (credits >= 5) {
-                          setAuthError("You must use your existing balance (below 5 credits) before purchasing more.");
+                          setAuthError("You must drop below 5 credits before purchasing more.");
                           setTimeout(() => setAuthError(null), 6000);
                           return;
                         }

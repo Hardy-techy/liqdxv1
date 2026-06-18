@@ -7,20 +7,12 @@ export interface SynthraQuoteParams {
 }
 
 export interface SynthraQuoteResponse {
-  state: string;
-  chainId: number;
-  routing: string;
-  tradeType: string;
-  amountIn: string;
-  amountOut: string;
-  amountInDecimals: string;
-  amountOutDecimals: string;
-  gasEstimate: string;
-  gasEstimateUSD: string;
-  routeString: string;
-  latencyMs: number;
-  warnings: string[];
-  route: any[];
+  route: any; // Complex routing object
+  quote: {
+    estimatedOutput: string;
+    priceImpact: string;
+    minimumOutput: string;
+  };
 }
 
 export interface SynthraSwapParams {
