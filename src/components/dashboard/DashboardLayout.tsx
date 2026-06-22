@@ -35,14 +35,14 @@ export function DashboardLayout({
       {renderErrorToast()}
 
       {/* Top Navigation Bar */}
-      <header className="flex items-center justify-between px-8 shrink-0 bg-white dark:bg-[#09090b] z-50 py-2 border-b border-zinc-100 dark:border-white/5">
-        <div className="flex items-center w-full max-w-7xl mx-auto">
-          <div className="flex items-center gap-2 mr-16">
+      <header className="flex flex-col px-4 sm:px-8 shrink-0 bg-white dark:bg-[#09090b] z-50 pt-2 border-b border-zinc-100 dark:border-white/5">
+        <div className="flex items-center justify-between gap-4 w-full max-w-7xl mx-auto pb-2">
+          <div className="flex items-center gap-2 shrink-0">
             <img src="/light-lidx.png" alt="LIQDX" className="h-8 w-auto object-contain dark:hidden scale-[1.3] origin-left" />
             <img src="/liqx.png" alt="LIQDX" className="h-8 w-auto object-contain hidden dark:block scale-[1.3] origin-left" />
           </div>
 
-          <nav className="flex items-center hidden lg:flex gap-1 flex-1">
+          <nav className="hidden lg:flex items-center gap-1 flex-1 mx-8">
             {[
               { id: "terminal", label: "Dashboard" },
               { id: "intelligence", label: "Agent" },
@@ -54,11 +54,10 @@ export function DashboardLayout({
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id as any)}
-                  className={`px-4 h-10 flex items-center justify-center rounded-[8px] text-[13px] font-medium transition-all duration-200 cursor-pointer ${
-                    isActive 
-                      ? "bg-blue-50 dark:bg-[#1E293B] text-blue-600 dark:text-[#3B82F6]" 
-                      : "bg-transparent text-slate-500 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-slate-200"
-                  }`}
+                  className={`px-4 h-10 flex items-center justify-center rounded-[8px] text-[13px] font-medium transition-all duration-200 cursor-pointer ${isActive
+                    ? "bg-blue-50 dark:bg-[#1E293B] text-blue-600 dark:text-[#3B82F6]"
+                    : "bg-transparent text-slate-500 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-slate-200"
+                    }`}
                 >
                   {item.label}
                 </button>
@@ -69,13 +68,13 @@ export function DashboardLayout({
           <div className="flex items-center gap-2">
             {/* Twitter Block */}
             {twitterHandle ? (
-              <div className="flex items-center px-3 cursor-default">
-                <span className="text-[15px] font-bold text-[#0061F0] dark:text-[#3B82F6] hover:opacity-80 transition-opacity tracking-wide">
+              <div className="flex items-center px-2 sm:px-3 ml-2 sm:ml-0 cursor-default">
+                <span className="text-[14px] sm:text-[15px] font-bold text-[#0061F0] dark:text-[#3B82F6] hover:opacity-80 transition-opacity tracking-wide">
                   @{twitterHandle}
                 </span>
               </div>
             ) : (
-              <button 
+              <button
                 onClick={() => {
                   if (address && circleWalletId) {
                     window.location.href = `/api/auth/twitter/login?address=${address}&walletId=${circleWalletId}`;
@@ -86,7 +85,7 @@ export function DashboardLayout({
                 className="flex items-center gap-1.5 px-4 h-10 bg-white dark:bg-[#1A1A1A] border border-black/5 dark:border-white/10 rounded-[8px] text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white transition-colors"
               >
                 <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
-                <span className="text-[14px] font-medium">Connect X</span>
+                <span className="text-[14px] font-medium hidden sm:block">Connect X</span>
               </button>
             )}
 
@@ -120,8 +119,8 @@ export function DashboardLayout({
                             <img src={`https://api.dicebear.com/7.x/shapes/svg?seed=${address}`} alt="Avatar" className="w-full h-full object-cover scale-125" />
                           )}
                         </div>
-                        <span className="text-[14px] font-bold text-white tracking-wide pr-1">
-                          {account?.displayName || `${address.slice(0, 6)}...${address.slice(-6)}`}
+                        <span className="text-[13px] sm:text-[14px] font-bold text-white tracking-wide pr-1 whitespace-nowrap">
+                          {account?.displayName || `${address.slice(0, 6)}...${address.slice(-4)}`}
                         </span>
                       </>
                     ) : (
@@ -133,15 +132,40 @@ export function DashboardLayout({
             </ConnectButton.Custom>
           </div>
         </div>
+
+        {/* Mobile Navigation Row */}
+        <nav className="flex lg:hidden items-center gap-2 w-full overflow-x-auto no-scrollbar pb-2 pt-1 max-w-7xl mx-auto">
+          {[
+            { id: "terminal", label: "Dashboard" },
+            { id: "intelligence", label: "Agent" },
+            { id: "history", label: "Activity" },
+            { id: "credits", label: "Credits" }
+          ].map(item => {
+            const isActive = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => setActiveTab(item.id as any)}
+                className={`px-4 h-9 shrink-0 flex items-center justify-center rounded-full text-[13px] font-medium transition-all duration-200 cursor-pointer border ${isActive
+                  ? "bg-blue-50 dark:bg-[#1E293B] text-blue-600 dark:text-[#3B82F6] border-transparent"
+                  : "bg-transparent text-slate-500 dark:text-[#94A3B8] border-zinc-200 dark:border-white/10"
+                  }`}
+              >
+                {item.label}
+              </button>
+            );
+          })}
+        </nav>
       </header>
 
       {/* Main Content Area */}
-      <main className={`flex-1 custom-scrollbar w-full mx-auto max-w-[1600px] ${
-          activeTab === 'history'
-            ? 'overflow-hidden flex flex-col bg-white dark:bg-[#09090b] pt-6 pb-0 px-4 sm:px-8'
-            : activeTab === 'intelligence' || activeTab === 'terminal' 
-              ? 'overflow-hidden flex flex-col py-0 px-0' 
-              : 'overflow-y-auto py-6 px-4 sm:px-8'
+      <main className={`flex-1 custom-scrollbar w-full mx-auto max-w-[1600px] ${activeTab === 'history'
+        ? 'overflow-hidden flex flex-col bg-white dark:bg-[#09090b] pt-6 pb-0 px-4 sm:px-8'
+        : activeTab === 'intelligence'
+          ? 'overflow-hidden flex flex-col py-0 px-0'
+          : activeTab === 'terminal'
+            ? 'overflow-y-auto flex flex-col py-0 px-0'
+            : 'overflow-y-auto py-6 px-4 sm:px-8'
         }`}>
         {children}
       </main>

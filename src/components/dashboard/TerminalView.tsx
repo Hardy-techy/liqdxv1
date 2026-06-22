@@ -59,9 +59,9 @@ export function TerminalView({
   setIsDropdownOpen
 }: TerminalViewProps) {
   return (
-    <div className="flex flex-col w-full max-w-[1100px] mx-auto p-4 sm:p-5 gap-4 flex-1 min-h-0">
+    <div className="flex flex-col w-full max-w-[1100px] mx-auto p-4 sm:p-5 gap-4">
       {/* TOP ROW: 2 Boxes */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 flex-[0.55] min-h-0">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* Box 1: PORTFOLIO (Largest, Vibrant Blue) - Span 7 */}
         <div className="col-span-12 lg:col-span-7 bg-[#0088f0] rounded-[20px] p-6 shadow-md relative flex flex-col h-full min-h-0 overflow-hidden">
           {/* Crisp Professional Liquid Pattern */}
@@ -72,26 +72,26 @@ export function TerminalView({
             <div className="absolute bottom-[-30%] right-[-10%] w-[550px] h-[550px] bg-black/[0.04] border border-black/10 animate-spin pointer-events-none origin-center" style={{ animationDuration: '45s', animationDirection: 'reverse', borderRadius: '60% 40% 30% 70%' }}></div>
           </div>
 
-          <div className="flex items-center justify-between mb-2 relative z-20">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 relative z-20 gap-2 sm:gap-0">
             <div className="inline-flex py-1.5">
               <span className="text-[11px] font-bold text-white tracking-wider uppercase opacity-90">
                 AI Wallet Active
               </span>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               <div className="relative">
-                <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-[8px] text-[13px] font-medium text-white transition-colors backdrop-blur-md">
-                  {selectedChain === 'OP-SEPOLIA' ? <NetworkOptimism className="w-4 h-4" variant="branded" /> :
-                    selectedChain === 'ARB-SEPOLIA' ? <NetworkArbitrumOne className="w-4 h-4" variant="branded" /> :
-                      selectedChain === 'BASE-SEPOLIA' ? <NetworkBase className="w-4 h-4" variant="branded" /> :
-                        <NetworkArc className="w-4 h-4" variant="branded" />}
-                  <span>{selectedChain === 'OP-SEPOLIA' ? 'Optimism' : selectedChain === 'ARB-SEPOLIA' ? 'Arbitrum' : selectedChain === 'BASE-SEPOLIA' ? 'Base' : 'Arc Testnet'}</span>
-                  <svg className={`w-3.5 h-3.5 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="flex items-center gap-1 sm:gap-2 px-2.5 py-1.5 sm:px-4 sm:py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-[8px] text-[12px] sm:text-[13px] font-medium text-white transition-colors backdrop-blur-md">
+                  {selectedChain === 'OP-SEPOLIA' ? <NetworkOptimism className="w-4 h-4 shrink-0" variant="branded" /> :
+                    selectedChain === 'ARB-SEPOLIA' ? <NetworkArbitrumOne className="w-4 h-4 shrink-0" variant="branded" /> :
+                      selectedChain === 'BASE-SEPOLIA' ? <NetworkBase className="w-4 h-4 shrink-0" variant="branded" /> :
+                        <NetworkArc className="w-4 h-4 shrink-0" variant="branded" />}
+                  <span className="truncate">{selectedChain === 'OP-SEPOLIA' ? 'Optimism' : selectedChain === 'ARB-SEPOLIA' ? 'Arbitrum' : selectedChain === 'BASE-SEPOLIA' ? 'Base' : 'Arc Testnet'}</span>
+                  <svg className={`w-3.5 h-3.5 shrink-0 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
                 </button>
 
                 {isDropdownOpen && (
-                  <div className="absolute top-full right-0 mt-2 w-[160px] bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-white/5 rounded-xl shadow-xl overflow-hidden z-50 py-1">
+                  <div className="absolute top-full left-0 mt-2 w-[160px] bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-white/5 rounded-xl shadow-xl overflow-hidden z-50 py-1">
                     {[
                       { id: 'ARC-TESTNET', name: 'Arc Testnet', icon: NetworkArc },
                       { id: 'OP-SEPOLIA', name: 'Optimism', icon: NetworkOptimism },
@@ -109,12 +109,12 @@ export function TerminalView({
                 )}
               </div>
 
-              <div className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-[8px] text-[13px] font-medium text-white transition-colors backdrop-blur-md cursor-pointer" onClick={() => { if (wallet?.address) { navigator.clipboard.writeText(wallet.address); } }}>
-                <span>{wallet?.address ? `${wallet.address.slice(0, 6)}...${wallet.address.slice(-4)}` : "Loading AI..."}</span>
-                <svg className="w-3.5 h-3.5 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+              <div className="flex items-center gap-1 sm:gap-2 px-2.5 py-1.5 sm:px-4 sm:py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-[8px] text-[12px] sm:text-[13px] font-medium text-white transition-colors backdrop-blur-md cursor-pointer shrink-0" onClick={() => { if (wallet?.address) { navigator.clipboard.writeText(wallet.address); } }}>
+                <span>{wallet?.address ? `${wallet.address.slice(0, 4)}...${wallet.address.slice(-4)}` : "Loading..."}</span>
+                <svg className="w-3.5 h-3.5 opacity-70 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
               </div>
 
-              <button onClick={() => fetchBalance(wallet?.id)} disabled={balanceLoading} className={`w-10 h-10 rounded-[8px] border border-white/20 flex items-center justify-center transition-colors backdrop-blur-md ml-1 ${balanceLoading ? "text-white/50 cursor-not-allowed" : "text-white/90 hover:bg-white/10"}`}>
+              <button onClick={() => fetchBalance(wallet?.id)} disabled={balanceLoading} className={`w-8 h-8 sm:w-10 sm:h-10 rounded-[8px] border border-white/20 flex items-center justify-center transition-colors backdrop-blur-md shrink-0 ${balanceLoading ? "text-white/50 cursor-not-allowed" : "text-white/90 hover:bg-white/10"}`}>
                 <svg className={`w-4 h-4 text-white ${balanceLoading ? "animate-spin opacity-50" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
               </button>
             </div>
@@ -124,7 +124,7 @@ export function TerminalView({
             <h2 className="text-[3rem] sm:text-[4rem] font-bold leading-none text-white tracking-tight">
               {totalPortfolioValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </h2>
-            <div className="flex items-center gap-3 mt-3">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-6 sm:mt-3">
               <span className="text-[13px] font-medium text-white/80">
                 USDC: <span className="font-bold text-white">{uniqueBalancesArray.filter(b => inferSymbol(b) === 'USDC').reduce((sum, b) => sum + Number(b.amount || 0), 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </span>
@@ -135,7 +135,7 @@ export function TerminalView({
             </div>
           </div>
 
-          <div className="flex items-center gap-4 mt-auto relative z-10 transition-all duration-300">
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4 mt-6 sm:mt-auto relative z-10 transition-all duration-300">
             <button onClick={() => setActiveAction("deposit")} className={`px-5 py-2.5 rounded-[8px] text-[13px] font-bold shadow-md hover:scale-105 transition-all cursor-pointer ${activeAction === "deposit" ? "bg-white text-[#0088f0] ring-4 ring-white/20" : "bg-white text-[#0088f0]"}`}>
               Deposit
             </button>
@@ -152,7 +152,7 @@ export function TerminalView({
         </div>
 
         {/* Box 2: KEY METRICS (4 Stats grouped) - Span 5 */}
-        <div className="col-span-12 lg:col-span-5 bg-white dark:bg-[#1A1A1A] rounded-[20px] p-6 shadow-[0_2px_10px_rgb(0,0,0,0.03)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] border border-zinc-100 dark:border-white/5 flex flex-col h-full min-h-0">
+        <div className="col-span-12 lg:col-span-5 bg-white dark:bg-[#1A1A1A] rounded-[20px] p-6 shadow-[0_2px_10px_rgb(0,0,0,0.03)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] border border-zinc-100 dark:border-white/5 flex flex-col h-full">
           <div className="flex items-center justify-between mb-6 px-2">
             <h3 className="text-[16px] font-medium text-zinc-900 dark:text-white">Key Metrics</h3>
             <div className="w-8 h-8 rounded-full border border-zinc-200 dark:border-white/10 flex items-center justify-center cursor-pointer text-zinc-400 hover:text-zinc-600 dark:hover:text-white">
@@ -160,13 +160,13 @@ export function TerminalView({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 flex-1 min-h-0">
+          <div className="grid grid-cols-2 gap-2 flex-1">
             <div className="bg-zinc-50 dark:bg-[#2A2A2A]/50 rounded-2xl p-3.5 flex flex-col justify-center min-h-0 relative overflow-hidden group">
               <div className="absolute top-0 right-0 p-3 opacity-20 group-hover:opacity-100 transition-opacity">
                 <svg className="w-5 h-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
               </div>
               <span className="text-[11px] font-medium text-zinc-500 mb-1 z-10 relative">Net Worth</span>
-              <span className="text-[1.2rem] font-bold text-zinc-900 dark:text-white z-10 relative">${allChainsNetWorth.toFixed(2)}</span>
+              <span className="text-[1rem] sm:text-[1.2rem] font-bold text-zinc-900 dark:text-white z-10 relative">${allChainsNetWorth.toFixed(2)}</span>
             </div>
 
             <div className="bg-zinc-50 dark:bg-[#2A2A2A]/50 rounded-2xl p-3.5 flex flex-col justify-center min-h-0 relative overflow-hidden group">
@@ -174,13 +174,13 @@ export function TerminalView({
                 <svg className="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
               </div>
               <span className="text-[11px] font-medium text-zinc-500 mb-1 z-10 relative">Total Tx</span>
-              <span className="text-[1.2rem] font-bold text-zinc-900 dark:text-white z-10 relative">{txHistory.length || 24}</span>
+              <span className="text-[1rem] sm:text-[1.2rem] font-bold text-zinc-900 dark:text-white z-10 relative">{txHistory.length || 24}</span>
             </div>
 
             <div className="bg-zinc-50 dark:bg-[#2A2A2A]/50 rounded-2xl p-3.5 flex flex-col justify-center min-h-0">
               <span className="text-[11px] font-medium text-zinc-500 mb-1">Exposure</span>
               <div className="flex items-center justify-between">
-                <span className="text-[1.2rem] font-bold text-zinc-900 dark:text-white">4 Chains</span>
+                <span className="text-[1rem] sm:text-[1.2rem] font-bold text-zinc-900 dark:text-white">4 Chains</span>
                 <div className="flex -space-x-1.5">
                   <NetworkArc className="w-[22px] h-[22px] rounded-full ring-[2px] ring-zinc-50 dark:ring-[#2A2A2A] bg-white dark:bg-[#1A1A1A] relative z-40" variant="branded" />
                   <NetworkOptimism className="w-[22px] h-[22px] rounded-full ring-[2px] ring-zinc-50 dark:ring-[#2A2A2A] bg-white dark:bg-[#1A1A1A] relative z-30" variant="branded" />
@@ -193,7 +193,7 @@ export function TerminalView({
             <div className="bg-zinc-50 dark:bg-[#2A2A2A]/50 rounded-2xl p-3.5 flex flex-col justify-center min-h-0">
               <span className="text-[11px] font-medium text-zinc-500 mb-1">Assets</span>
               <div className="flex items-center justify-between">
-                <span className="text-[1.2rem] font-bold text-zinc-900 dark:text-white">2</span>
+                <span className="text-[1rem] sm:text-[1.2rem] font-bold text-zinc-900 dark:text-white">2</span>
                 <div className="flex -space-x-1.5">
                   <TokenUSDC className="w-[22px] h-[22px] rounded-full ring-[2px] ring-zinc-50 dark:ring-[#2A2A2A] bg-white dark:bg-[#1A1A1A] relative z-20" variant="branded" />
                   <TokenEURC className="w-[22px] h-[22px] rounded-full ring-[2px] ring-zinc-50 dark:ring-[#2A2A2A] bg-white dark:bg-[#1A1A1A] relative z-10" variant="branded" />
@@ -205,17 +205,17 @@ export function TerminalView({
       </div>
 
       {/* BOTTOM ROW: 3 Boxes */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-[0.45] min-h-0">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
         {/* Box 3: TRANSACTION HISTORY */}
-        <div className="bg-white dark:bg-[#1A1A1A] rounded-[20px] px-6 pt-6 pb-2 shadow-[0_2px_10px_rgb(0,0,0,0.03)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] border border-zinc-100 dark:border-white/5 flex flex-col h-full min-h-0">
+        <div className="bg-white dark:bg-[#1A1A1A] rounded-[20px] px-6 pt-6 pb-4 shadow-[0_2px_10px_rgb(0,0,0,0.03)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] border border-zinc-100 dark:border-white/5 flex flex-col h-full">
           <div className="flex items-center justify-between mb-2 px-2">
             <h3 className="text-[16px] font-medium text-zinc-900 dark:text-white tracking-tight">Transaction History</h3>
             <div className="flex items-center gap-2">
               <button className="w-8 h-8 rounded-full border border-zinc-200 dark:border-white/10 flex items-center justify-center text-zinc-400 hover:text-zinc-600 dark:hover:text-white"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg></button>
             </div>
           </div>
-          <div className="flex flex-col gap-0 flex-1 min-h-0 overflow-hidden pr-1">
+          <div className="flex flex-col gap-0 flex-1 pr-1">
             {combinedTxs.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-zinc-400 dark:text-zinc-500 text-[13px] py-4">
                 No recent transactions
@@ -246,7 +246,7 @@ export function TerminalView({
         </div>
 
         {/* Box 4: HOLDINGS / SPENDING OVERVIEW */}
-        <div className="bg-white dark:bg-[#1A1A1A] rounded-[20px] p-6 shadow-[0_2px_10px_rgb(0,0,0,0.03)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] border border-zinc-100 dark:border-white/5 flex flex-col h-full min-h-0">
+        <div className="bg-white dark:bg-[#1A1A1A] rounded-[20px] p-6 shadow-[0_2px_10px_rgb(0,0,0,0.03)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] border border-zinc-100 dark:border-white/5 flex flex-col h-full">
           <div className="flex items-center justify-between mb-8 px-2 relative">
             <h3 className="text-[16px] font-medium text-zinc-900 dark:text-white">Holdings Overview</h3>
             <div className="relative">
@@ -264,7 +264,7 @@ export function TerminalView({
             </div>
           </div>
 
-          <div className="flex-1 flex items-end justify-center gap-4 sm:gap-6 px-2 pb-2 h-full mx-auto w-full max-w-[280px]">
+          <div className="flex-1 flex items-end justify-center gap-4 sm:gap-6 px-2 pb-2 h-full min-h-[120px] sm:min-h-[140px] mx-auto w-full max-w-[280px]">
             {allBalances.length >= 0 ? (() => {
               let aggregated: { label: string, amount: number, pct: number }[] = [];
 
@@ -326,7 +326,7 @@ export function TerminalView({
         </div>
 
         {/* Box 5: AI AGENT HUB */}
-        <div className="bg-white dark:bg-[#1A1A1A] rounded-[20px] p-6 shadow-[0_2px_10px_rgb(0,0,0,0.03)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] flex flex-col relative h-full min-h-0 border border-zinc-100 dark:border-white/5">
+        <div className="bg-white dark:bg-[#1A1A1A] rounded-[20px] p-6 shadow-[0_2px_10px_rgb(0,0,0,0.03)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] flex flex-col relative h-full border border-zinc-100 dark:border-white/5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-[16px] font-medium text-zinc-900 dark:text-white">AI Credits</h3>
             <div className="px-3 py-1 bg-zinc-100 dark:bg-white/5 text-zinc-500 dark:text-zinc-400 text-[12px] rounded-full font-medium">Monthly</div>

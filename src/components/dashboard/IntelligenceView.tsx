@@ -159,6 +159,7 @@ export function IntelligenceView({
   isLoadingSession
 }: IntelligenceViewProps) {
   const [confirmedYields, setConfirmedYields] = React.useState<Record<string, any>>({});
+  const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
 
   React.useEffect(() => {
     const pendingTxIds = messages
@@ -208,8 +209,16 @@ export function IntelligenceView({
         <div className="absolute bottom-[-10%] right-[-5%] w-[50%] h-[50%] rounded-full bg-[#00A3FF]/20 dark:bg-[#00A3FF]/15 blur-[120px] animate-[pulse_10s_ease-in-out_infinite_reverse]" />
       </div>
 
+      {/* Mobile Sidebar Overlay */}
+      {isSidebarOpen && (
+        <div 
+          className="md:hidden absolute inset-0 bg-black/20 dark:bg-black/40 z-40 backdrop-blur-sm transition-opacity"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
       {/* Left Sidebar for Chat History */}
-      <div className="w-[210px] shrink-0 flex flex-col h-full bg-white/60 dark:bg-black/40 backdrop-blur-3xl border-r border-white/60 dark:border-white/5 p-5 hidden md:flex z-10 shadow-[4px_0_24px_rgba(0,0,0,0.04)]">
+      <div className={`w-[210px] shrink-0 flex flex-col h-full bg-white/90 dark:bg-[#09090b]/90 md:bg-white/60 md:dark:bg-black/40 backdrop-blur-3xl border-r border-white/60 dark:border-white/5 p-5 z-50 shadow-[4px_0_24px_rgba(0,0,0,0.04)] absolute md:relative transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
         <div className="flex items-center justify-between mb-4 px-0">
           <button onClick={() => startNewChat()} className="flex items-center gap-2 text-[13px] font-semibold text-zinc-800 dark:text-zinc-100 bg-white/60 dark:bg-zinc-800/50 hover:bg-white dark:hover:bg-zinc-800 border border-white/50 dark:border-white/10 w-full rounded-xl py-2.5 px-3 transition-all duration-300 shadow-[0_2px_10px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_20px_rgba(0,102,255,0.1)] cursor-pointer group backdrop-blur-md" title="New Chat">
             <div className="bg-[#0066FF]/10 dark:bg-[#0066FF]/20 p-1.5 rounded-md group-hover:bg-[#0066FF]/20 dark:group-hover:bg-[#0066FF]/30 transition-colors shadow-sm">
@@ -263,6 +272,15 @@ export function IntelligenceView({
 
       {/* Main Chat Area */}
       <div className="flex-1 min-h-0 flex flex-col w-full relative overflow-hidden bg-transparent">
+        {/* Hamburger Menu Button for Mobile */}
+        <button 
+          onClick={() => setIsSidebarOpen(true)}
+          className="md:hidden absolute top-4 left-4 z-30 p-2 rounded-lg bg-white/50 dark:bg-zinc-800/50 backdrop-blur-md border border-zinc-200 dark:border-white/10 text-zinc-600 dark:text-zinc-300 shadow-sm"
+        >
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
 
         <div className="relative z-10 flex-1 flex flex-col h-full w-full">
           {isLoadingSession ? (
@@ -275,11 +293,11 @@ export function IntelligenceView({
           ) : isChatEmpty ? (
             <div className="flex-1 flex flex-col items-center justify-center h-full relative px-4 w-full max-w-3xl mx-auto pb-16">
               {/* Floating 3D Liquid Blob */}
-              <div className="relative mb-2 w-36 h-36 flex items-center justify-center animate-[float_6s_ease-in-out_infinite] translate-y-6">
+              <div className="relative mb-2 w-28 h-28 sm:w-36 sm:h-36 flex items-center justify-center animate-[float_6s_ease-in-out_infinite] translate-y-6">
                 <img src="/aura.png" alt="3D Liquid Blob" className="w-full h-full object-contain drop-shadow-xl scale-[1.35]" />
               </div>
 
-              <h2 className="text-3xl font-medium dark:text-zinc-100 text-zinc-900 tracking-tight text-center font-sans leading-tight mb-6 mt-2">
+              <h2 className="text-2xl sm:text-3xl font-medium dark:text-zinc-100 text-zinc-900 tracking-tight text-center font-sans leading-tight mb-6 mt-2">
                 How Can I <span className="text-[#0066FF] dark:text-[#00A3FF]">Assist You Today?</span>
               </h2>
 
@@ -310,21 +328,20 @@ export function IntelligenceView({
               </div>
 
               {/* Agent Cards as Prompt Starters */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5 w-full mt-8">
+              <div className="flex flex-col md:grid md:grid-cols-3 gap-4 w-full mt-8 pb-4">
                 {[
                   { title: "Flux", desc: "Swap, Bridge, and Send tokens across chains instantly.", icon: <img src="/flux.png" alt="Flux" className="w-8 h-8 object-contain" />, prompt: "@flux help" },
                   { title: "Atlas", desc: "Maximize returns with Yield, Staking, and Withdrawals.", icon: <img src="/Atlas.png" alt="Atlas" className="w-8 h-8 object-contain" />, prompt: "@atlas help" },
                   { title: "Oracle", desc: "Live Prices, Crypto News, and Market Sentiment.", icon: <img src="/oracle.png" alt="Oracle" className="w-8 h-8 object-contain" />, prompt: "@oracle help" }
                 ].map((item, i) => (
-                  <div key={i} onClick={() => setChatInput(item.prompt)} className="bg-white/50 dark:bg-[#121214]/50 backdrop-blur-2xl border border-white/40 dark:border-white/5 shadow-[0_8px_30px_rgba(0,0,0,0.02)] hover:shadow-[0_12px_40px_rgba(0,102,255,0.12)] hover:border-[#0066FF]/30 rounded-[24px] p-5 transition-all duration-500 hover:-translate-y-1 cursor-pointer text-left flex flex-col gap-4 group relative overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent dark:from-white/5 dark:to-transparent pointer-events-none rounded-[24px]" />
-                    <div className="w-14 h-14 rounded-2xl bg-white dark:bg-zinc-800/80 shadow-sm flex items-center justify-center transition-all duration-300 mb-1 relative z-10 group-hover:scale-110 group-hover:ring-2 group-hover:ring-[#0066FF]/20">
+                  <div key={i} onClick={() => setChatInput(item.prompt)} className="w-full bg-white/50 dark:bg-[#121214]/50 backdrop-blur-2xl border border-white/40 dark:border-white/5 shadow-[0_8px_30px_rgba(0,0,0,0.02)] hover:shadow-[0_12px_40px_rgba(0,102,255,0.12)] hover:border-[#0066FF]/30 rounded-[16px] md:rounded-[24px] p-3 md:p-5 transition-all duration-500 hover:-translate-y-1 cursor-pointer text-left flex flex-row md:flex-col items-center md:items-start gap-4 group relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent dark:from-white/5 dark:to-transparent pointer-events-none rounded-[16px] md:rounded-[24px]" />
+                    <div className="shrink-0 w-12 h-12 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-white dark:bg-zinc-800/80 shadow-sm flex items-center justify-center transition-all duration-300 md:mb-1 relative z-10 group-hover:scale-110 group-hover:ring-2 group-hover:ring-[#0066FF]/20">
                       {item.icon}
                     </div>
-                    <div className="relative z-10">
-                      <h3 className="text-[14px] font-bold mb-1 text-zinc-900 dark:text-zinc-100">{item.title}</h3>
-                      <p className="text-[12px] text-zinc-500 dark:text-zinc-400 leading-relaxed font-medium">{item.desc}</p>
-                      <p className="text-[11px] text-[#0066FF] dark:text-[#63B3FF] mt-2 font-medium opacity-0 group-hover:opacity-100 transition-opacity">&quot;{item.prompt}&quot;</p>
+                    <div className="relative z-10 flex-1">
+                      <h3 className="text-[14px] font-bold mb-0.5 md:mb-1 text-zinc-900 dark:text-zinc-100">{item.title}</h3>
+                      <p className="text-[11px] md:text-[13px] text-zinc-500 dark:text-zinc-400 leading-tight md:leading-normal">{item.desc}</p>
                     </div>
                   </div>
                 ))}
