@@ -1467,15 +1467,11 @@ export async function POST(req: Request) {
             message: `Insufficient ${intent.tokenIn} balance on Arc Testnet. You have ${availableBalance} ${intent.tokenIn}. Please deposit more or try a smaller amount.`,
           });
         }
-        if (errMsg.includes("route") || errMsg.includes("not found") || errMsg.includes("No route")) {
-          return NextResponse.json({
-            success: false,
-            intent: "swap",
-            message: `No swap route available for ${intent.tokenIn} → ${intent.tokenOut} on Arc Testnet. This pair may not be supported yet. Try USDC ↔ EURC.`,
-          });
-        }
-        // On-chain revert — typically liquidity or approval issues
-        if (errCode === 5002 || errMsg.includes("SIMULATION_FAILED") || errMsg.includes("Transaction reverted") || errMsg.includes("reverted")) {
+        // Circle's Swap Kit occasionally loses testnet routes or reverts due to liquidity. Fallback to AchSwap
+        if (
+          errMsg.includes("route") || errMsg.includes("not found") || errMsg.includes("No route") ||
+          errCode === 5002 || errMsg.includes("SIMULATION_FAILED") || errMsg.includes("Transaction reverted") || errMsg.includes("reverted")
+        ) {
           try {
             // FALLBACK TO ACHSWAP
             const { parseUnits } = require("viem");
