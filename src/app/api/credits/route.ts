@@ -8,8 +8,8 @@ import { requireAuth, requireAuthWithWallet, requireAuthWithWalletId } from "@/l
 
 // Credit packages: USDC -> Credits
 const CREDIT_PACKAGES: Record<string, { usdc: number; credits: number }> = {
-  "5": { usdc: 5, credits: 15 },
-  "10": { usdc: 10, credits: 25 },
+  "3": { usdc: 3, credits: 15 },
+  "6": { usdc: 6, credits: 25 },
 };
 
 // Credit costs per action (hidden from user)

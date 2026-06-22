@@ -108,8 +108,8 @@ export function CreditsView({
           
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
-              { id: "5", usdc: 5, credits: 15, title: "Starter Pack", desc: "Perfect for occasional tasks and testing.", popular: false },
-              { id: "10", usdc: 10, credits: 25, title: "Pro Pack", desc: "Best value for frequent, high-volume usage.", popular: true },
+              { id: "3", usdc: 3, credits: 15, title: "Starter Pack", desc: "Perfect for occasional tasks and testing.", popular: false },
+              { id: "6", usdc: 6, credits: 25, title: "Pro Pack", desc: "Best value for frequent, high-volume usage.", popular: true },
             ].map((pkg) => (
               <Card key={pkg.id} className={`flex flex-col relative overflow-hidden transition-all duration-300 hover:-translate-y-0.5 ${pkg.popular ? 'border-[#0066FF] ring-1 ring-[#0066FF] shadow-md shadow-[#0066FF]/10 dark:shadow-[#0066FF]/5 bg-gradient-to-b from-white to-[#0066FF]/[0.02] dark:from-zinc-950 dark:to-[#0066FF]/10' : 'hover:shadow-sm border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950'}`}>
                 {pkg.popular && (
@@ -149,11 +149,11 @@ export function CreditsView({
                   <div className="flex flex-col gap-2">
                     <Button
                       variant={pkg.popular ? "default" : "outline"}
-                      className={`w-full h-10 text-[13px] font-bold rounded-xl transition-all ${pkg.popular && credits < 5 ? 'bg-[#0066FF] hover:bg-blue-600 text-white shadow-sm hover:shadow-md hover:shadow-[#0066FF]/20' : ''}`}
-                      disabled={topUpLoading || credits >= 5}
+                      className={`w-full h-10 text-[13px] font-bold rounded-xl transition-all ${pkg.popular && credits < 3 ? 'bg-[#0066FF] hover:bg-blue-600 text-white shadow-sm hover:shadow-md hover:shadow-[#0066FF]/20' : ''}`}
+                      disabled={topUpLoading || credits >= 3}
                       onClick={async () => {
-                        if (credits >= 5) {
-                          setAuthError("You must drop below 5 credits before purchasing more.");
+                        if (credits >= 3) {
+                          setAuthError("You must drop below 3 credits before purchasing more.");
                           setTimeout(() => setAuthError(null), 6000);
                           return;
                         }
@@ -174,9 +174,9 @@ export function CreditsView({
                     >
                       Purchase Package
                     </Button>
-                    {credits >= 5 && (
+                    {credits >= 3 && (
                       <span className="text-[10px] text-center font-medium text-zinc-400 dark:text-zinc-500">
-                        Available when balance drops below 5
+                        Available when balance drops below 3
                       </span>
                     )}
                   </div>
