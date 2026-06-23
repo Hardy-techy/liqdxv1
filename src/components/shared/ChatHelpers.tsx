@@ -63,7 +63,7 @@ export const PendingIndicator = ({ userText }: { userText: string }) => {
       "Securing optimal bridge price...",
       "Approving USDC transfer...",
       "Executing cross-chain transaction...",
-      "Waiting for destination confirmation..."
+      "Waiting for CCTP finalization (~1-2 mins)..."
     ];
   } else if (isSwap) {
     specializedMessages = [

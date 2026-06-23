@@ -16,7 +16,8 @@ const TOKEN_LOGOS: Record<string, string> = {
 
 export const TokenBadge = ({ symbol, amount }: { symbol: any, amount?: any }) => {
   const symStr = typeof symbol === "object" ? (symbol?.symbol || symbol?.token || "USDC") : String(symbol || "USDC");
-  const amtStr = typeof amount === "object" ? (amount?.amount || amount?.value || "0") : (amount ? String(amount) : undefined);
+  const rawAmtStr = typeof amount === "object" ? (amount?.amount || amount?.value || "0") : (amount ? String(amount) : undefined);
+  const amtStr = rawAmtStr && !isNaN(parseFloat(rawAmtStr)) ? parseFloat(rawAmtStr).toFixed(2) : rawAmtStr;
   const logo = TOKEN_LOGOS[symStr.toUpperCase()];
   return (
     <div className="flex flex-col gap-2 items-center">
@@ -35,7 +36,8 @@ export const TokenBadge = ({ symbol, amount }: { symbol: any, amount?: any }) =>
 
 export const ChainBadge = ({ chainName, amount }: { chainName: any, amount?: any }) => {
   const nameStr = typeof chainName === "object" ? (chainName?.name || "Arc") : String(chainName || "Arc");
-  const amtStr = typeof amount === "object" ? (amount?.amount || amount?.value || "0") : (amount ? String(amount) : undefined);
+  const rawAmtStr = typeof amount === "object" ? (amount?.amount || amount?.value || "0") : (amount ? String(amount) : undefined);
+  const amtStr = rawAmtStr && !isNaN(parseFloat(rawAmtStr)) ? parseFloat(rawAmtStr).toFixed(2) : rawAmtStr;
   const name = nameStr.toLowerCase();
   let IconComponent = null;
   let displayName = nameStr;

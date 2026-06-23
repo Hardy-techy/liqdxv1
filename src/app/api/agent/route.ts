@@ -1414,6 +1414,7 @@ export async function POST(req: Request) {
 
         const estimatedAmount = quote?.estimatedOutput?.amount;
         const estimatedToken = quote?.estimatedOutput?.token;
+        const calculatedRate = estimatedAmount ? (parseFloat(estimatedAmount) / parseFloat(swapAmount)).toFixed(4) : "0.95";
 
         let realTxHash = response.txHash || null;
         const txId = response.txHash || null;
@@ -1435,7 +1436,7 @@ export async function POST(req: Request) {
           tx_id: txId,
           status: "success",
           blockchain,
-          message: `Swap of ${swapAmount} ${intent.tokenIn} to ${intent.tokenOut}`,
+          message: `Swap of ${swapAmount} ${intent.tokenIn} to ${intent.tokenOut} executed successfully. You'll receive ~${estimatedAmount || "0.00"} ${intent.tokenOut}. Rate: 1 ${intent.tokenIn} = ${calculatedRate} ${intent.tokenOut}.`,
           confirmed_at: new Date().toISOString(),
         });
 
@@ -1449,9 +1450,9 @@ export async function POST(req: Request) {
           tokenOut: intent.tokenOut,
           amountIn: swapAmount,
           amountOut: estimatedAmount || "0.00",
-          rate: estimatedAmount ? (parseFloat(estimatedAmount) / parseFloat(swapAmount)).toFixed(4) : "0.95",
+          rate: calculatedRate,
           fee: "0.1%",
-          message: `Swap of ${swapAmount} ${intent.tokenIn} to ${intent.tokenOut} executed successfully.`,
+          message: `Swap of ${swapAmount} ${intent.tokenIn} to ${intent.tokenOut} executed successfully. You'll receive ~${estimatedAmount || "0.00"} ${intent.tokenOut}. Rate: 1 ${intent.tokenIn} = ${calculatedRate} ${intent.tokenOut}.`,
           txHash: realTxHash || txId,
           estimatedOutput: estimatedAmount || null,
           credits: remainingCredits,
@@ -1533,6 +1534,10 @@ export async function POST(req: Request) {
               if (polled) realTxHash = polled;
             }
 
+            // Use the quote's expectedOut for the rate calculation
+            const expectedOutDecimals = (Number(quote.expectedOut) / Math.pow(10, tokenOutDecimals)).toFixed(6);
+            const calculatedRate = (parseFloat(expectedOutDecimals) / parseFloat(swapAmount)).toFixed(6);
+
             // Log swap to Supabase
             await supabase.from("transaction_logs").insert({
               wallet_address: walletAddress,
@@ -1545,15 +1550,11 @@ export async function POST(req: Request) {
               tx_id: txId || "achswap_swap_success",
               status: "success",
               blockchain: "Arc_Testnet",
-              message: `Swap of ${swapAmount} ${intent.tokenIn} to ${intent.tokenOut} (via AchSwap)`,
+              message: `Swap of ${swapAmount} ${intent.tokenIn} to ${intent.tokenOut} executed successfully. You'll receive ~${expectedOutDecimals} ${intent.tokenOut}. Rate: 1 ${intent.tokenIn} = ${calculatedRate} ${intent.tokenOut}.`,
               confirmed_at: new Date().toISOString(),
             });
 
             const remainingCredits = await deductCredits(supabase, walletAddress, "swap", `Swap ${swapAmount} ${intent.tokenIn} → ${intent.tokenOut} (AchSwap)`);
-
-            // Use the quote's expectedOut for the rate calculation
-            const expectedOutDecimals = (Number(quote.expectedOut) / Math.pow(10, tokenOutDecimals)).toFixed(6);
-            const calculatedRate = (parseFloat(expectedOutDecimals) / parseFloat(swapAmount)).toFixed(6);
 
             return NextResponse.json({
               success: true,
@@ -1564,7 +1565,7 @@ export async function POST(req: Request) {
               amountOut: expectedOutDecimals,
               rate: calculatedRate,
               fee: "0.1%", // AchSwap has 0.1% aggregator fee
-              message: `Successfully swapped ${swapAmount} ${intent.tokenIn} for ${intent.tokenOut} via AchSwap.`,
+              message: `Swap of ${swapAmount} ${intent.tokenIn} to ${intent.tokenOut} executed successfully. You'll receive ~${expectedOutDecimals} ${intent.tokenOut}. Rate: 1 ${intent.tokenIn} = ${calculatedRate} ${intent.tokenOut}.`,
               txHash: realTxHash || txId,
               estimatedOutput: expectedOutDecimals,
               credits: remainingCredits,
@@ -1724,7 +1725,9 @@ export async function POST(req: Request) {
         const fromLifiChainId = LIFI_CHAIN_IDS[intent.sourceChain || "arc testnet"] || LIFI_CHAIN_IDS["arc testnet"];
         const toLifiChainId = LIFI_CHAIN_IDS[intent.destinationChain || "optimism"];
 
-        if (toLifiChainId) {
+        const ENABLE_LIFI = false; // TEMPORARILY DISABLED due to testnet relayer instability. Forcing CCTP Fallback.
+
+        if (ENABLE_LIFI && toLifiChainId) {
           console.log(`[LI.FI] Attempting bridge: ${bridgeAmount} USDC from chain ${fromLifiChainId} to ${toLifiChainId}`);
           const lifiQuote = await getLifiQuote(fromLifiChainId, toLifiChainId, amountInUnits, sourceAddress);
 
@@ -1865,10 +1868,13 @@ export async function POST(req: Request) {
         // Deduct credits after successful bridge
         const remainingCredits = await deductCredits(supabase, walletAddress, "bridge", `CCTP Bridge ${bridgeAmount} USDC to ${destinationChainName}`);
 
+        const feeValue = parseFloat(estimatedRelayerFee.replace(/[^0-9.]/g, '')) || 0;
+        const receivedAmount = Math.max(0, parseFloat(bridgeAmount) - feeValue).toFixed(4).replace(/\.?0+$/, '');
+
         return NextResponse.json({
           success: true,
           intent: "bridge",
-          message: `CCTP Bridge transfer of ${bridgeAmount} USDC from ${intent.sourceChain || "arc testnet"} to ${destinationChainName} initiated successfully. Relayer fee: ${estimatedRelayerFee}.`,
+          message: `Bridge of ${bridgeAmount} USDC from ${intent.sourceChain || "arc testnet"} to ${destinationChainName} executed via Circle CCTP. You'll receive ~${receivedAmount} USDC. Relayer fee: ${estimatedRelayerFee}. ETA: ~2m.`,
           amount: bridgeAmount,
           destinationChain: destinationChainName,
           fee: `Relayer Gas Fee (${estimatedRelayerFee})`,

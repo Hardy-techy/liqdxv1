@@ -426,7 +426,9 @@ export function IntelligenceView({
                                         </div>
                                         <span className="text-[14px] font-bold text-zinc-800 dark:text-zinc-200 w-[60px]">{b.symbol}</span>
                                       </div>
-                                      <span className="font-mono text-[14px] font-medium text-zinc-600 dark:text-zinc-400">{b.amount}</span>
+                                      <span className="font-mono text-[14px] font-medium text-zinc-600 dark:text-zinc-400">
+                                        {typeof b.amount === 'string' && !isNaN(parseFloat(b.amount)) ? parseFloat(b.amount).toFixed(2) : b.amount}
+                                      </span>
                                     </div>
                                   ))}
                                 </div>
@@ -455,7 +457,9 @@ export function IntelligenceView({
                                             <span className="text-[12px] font-medium text-zinc-400 dark:text-zinc-500 hidden sm:inline-block truncate">· {y.chain}</span>
                                           </span>
                                         </div>
-                                        <span className="font-mono text-[14px] font-bold text-[#0066FF] dark:text-[#63B3FF] shrink-0">{y.amount} {y.asset}</span>
+                                        <span className="font-mono text-[14px] font-bold text-[#0066FF] dark:text-[#63B3FF] shrink-0">
+                                          {typeof y.amount === 'string' && !isNaN(parseFloat(y.amount)) ? parseFloat(y.amount).toFixed(2) : y.amount} {y.asset}
+                                        </span>
                                       </div>
                                     ))}
                                   </div>
@@ -475,13 +479,21 @@ export function IntelligenceView({
                                 {msg.intent === "swap" ? (
                                   <div className="flex flex-col gap-2.5">
                                     <div className="flex items-center justify-between px-1">
-                                      <TokenBadge symbol={msg.tokenIn || "USDC"} amount={msg.amountIn} />
+                                      <TokenBadge symbol={msg.tokenIn || "USDC"} amount={msg.amountIn || msg.amount || (() => { const m = msg.content.match(/Swap(?: of)? ([\d.]+)/i); return m ? m[1] : undefined; })()} />
                                       <svg className="w-4 h-4 dark:text-zinc-650 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-                                      <TokenBadge symbol={msg.tokenOut || "EURC"} amount={msg.amountOut} />
+                                      <TokenBadge symbol={msg.tokenOut || "EURC"} amount={msg.amountOut || (() => {
+                                        const inAmt = msg.amountIn || msg.amount || (() => { const m = msg.content.match(/Swap(?: of)? ([\d.]+)/i); return m ? m[1] : 0; })();
+                                        const rateMatch = msg.content.match(/Rate: 1 [A-Z]+ = ([\d.]+)/i);
+                                        const rate = rateMatch ? rateMatch[1] : (msg.rate || "1.0762");
+                                        return inAmt ? (parseFloat(String(inAmt)) * parseFloat(String(rate))).toString() : undefined;
+                                      })()} />
                                     </div>
                                     <div className="flex justify-between items-center px-1 mt-1">
                                       <span className="text-[11px] font-medium dark:text-zinc-500 text-zinc-400">Rate</span>
-                                      <span className="text-[11px] font-mono dark:text-zinc-300 text-zinc-700">1 {msg.tokenIn || "USDC"} = {msg.rate || "0.95"} {msg.tokenOut || "EURC"}</span>
+                                      <span className="text-[11px] font-mono dark:text-zinc-300 text-zinc-700">1 {msg.tokenIn || "USDC"} = {(() => {
+                                        const rateMatch = msg.content.match(/Rate: 1 [A-Z]+ = ([\d.]+)/i);
+                                        return rateMatch ? rateMatch[1] : (msg.rate || "1.0762");
+                                      })()} {msg.tokenOut || "EURC"}</span>
                                     </div>
                                     <div className="flex justify-between items-center px-1">
                                       <span className="text-[11px] font-medium dark:text-zinc-500 text-zinc-400">Fee</span>
@@ -507,7 +519,7 @@ export function IntelligenceView({
                                           }
                                           return "Arc";
                                         })()
-                                      } amount={msg.amount} />
+                                      } amount={msg.amount || (() => { const match = msg.content.match(/Bridge(?: transfer)?(?: of)? ([\d.]+) USDC/i); return match ? match[1] : undefined; })()} />
                                       <svg className="w-4 h-4 dark:text-zinc-650 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
                                       <ChainBadge chainName={
                                         (() => {
@@ -533,15 +545,43 @@ export function IntelligenceView({
                                           if (p.includes("arc") && !fromStr.includes("arc")) return "Arc";
                                           return "Optimism";
                                         })()
-                                      } amount={msg.amount} />
+                                      } amount={(() => {
+                                        // Try to parse received amount directly (LI.FI)
+                                        const receiveMatch = msg.content.match(/receive ~?([\d.]+) USDC/i);
+                                        if (receiveMatch) return receiveMatch[1];
+                                        
+                                        // Otherwise calculate Source - Fee (CCTP)
+                                        const sourceAmountStr = msg.amount || (() => { const m = msg.content.match(/Bridge(?: transfer)?(?: of)? ([\d.]+) USDC/i); return m ? m[1] : "0"; })();
+                                        const sourceAmount = parseFloat(sourceAmountStr);
+                                        
+                                        let fee = 0;
+                                        if (msg.fee) {
+                                          const feeMatch = String(msg.fee).match(/([\d.]+)/);
+                                          if (feeMatch) fee = parseFloat(feeMatch[1]);
+                                        } else {
+                                          const cctpFeeMatch = msg.content.match(/Relayer fee: ~?([\d.]+) USDC/i) || msg.content.match(/Relayer fee: ([^\.]+)/i);
+                                          if (cctpFeeMatch && cctpFeeMatch[1].match(/[\d.]+/)) fee = parseFloat(cctpFeeMatch[1].match(/[\d.]+/)![0]);
+                                        }
+                                        
+                                        if (fee > 0 && msg.content.includes("CCTP")) {
+                                          return Math.max(0, sourceAmount - fee).toFixed(4).replace(/\.?0+$/, '');
+                                        }
+                                        return sourceAmountStr;
+                                      })()} />
                                     </div>
                                     <div className="flex justify-between items-center px-1 mt-1">
                                       <span className="text-[11px] font-medium dark:text-zinc-500 text-zinc-400">Network Fee</span>
-                                      <span className="text-[11px] font-mono dark:text-zinc-300 text-zinc-700">{msg.fee || "Sponsored"}</span>
+                                      <span className="text-[11px] font-mono dark:text-zinc-300 text-zinc-700">{msg.fee || (() => {
+                                        const cctpMatch = msg.content.match(/Relayer fee: (.*? USDC)/i) || msg.content.match(/Relayer fee: ([^\.]+)/i);
+                                        if (cctpMatch) return `Relayer Gas Fee (${cctpMatch[1]})`;
+                                        const lifiMatch = msg.content.match(/Fee: (.*?) USDC/i);
+                                        if (lifiMatch) return `${lifiMatch[1]} USDC (LI.FI 0.25%)`;
+                                        return "Sponsored";
+                                      })()}</span>
                                     </div>
                                     <div className="flex justify-between items-center px-1">
                                       <span className="text-[11px] font-medium dark:text-zinc-500 text-zinc-400">Route</span>
-                                      <span className="text-[11px] font-mono dark:text-zinc-300 text-zinc-700">Circle CCTP</span>
+                                      <span className="text-[11px] font-mono dark:text-zinc-300 text-zinc-700">{msg.content.includes("CCTP") ? "Circle CCTP" : "LI.FI Protocol"}</span>
                                     </div>
                                   </div>
                                 )}
