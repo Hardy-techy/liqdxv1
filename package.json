@@ -14,6 +14,7 @@
     "@circle-fin/app-kit": "^1.7.0",
     "@circle-fin/developer-controlled-wallets": "^10.6.0",
     "@google/generative-ai": "^0.24.1",
+    "@next/third-parties": "^16.2.9",
     "@rainbow-me/rainbowkit": "^2.2.11",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.107.0",
