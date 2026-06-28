@@ -753,18 +753,6 @@ RULES:
   return `I can help with swapping tokens (USDC ↔ EURC), bridging USDC to other chains, supplying to Aave for Yield, and checking your balances. Try: "Supply 10 USDC to Aave on Base".`;
 }
 
-// Credit costs per action (hidden from user)
-const CREDIT_COSTS: Record<string, number> = {
-  swap: 2,
-  bridge: 3,
-  yield: 3,
-  withdraw_yield: 3,
-  send: 1,
-  conversation: 1,
-  balance: 1,
-  help: 1,
-  unknown: 1,
-};
 
 // --- Aave V3 Integration ---
 const AAVE_POOL_ADDRESSES: Record<number, string> = {
@@ -942,47 +930,33 @@ async function pollForTxHash(client: any, txId: string): Promise<string> {
 }
 
 
-async function checkCredits(supabase: any, walletAddress: string, action: string): Promise<{ sufficient: boolean; balance: number; cost: number }> {
-  const cost = CREDIT_COSTS[action] || 1;
-  const { data } = await supabase
-    .from("credits_balances")
-    .select("balance")
-    .eq("wallet_address", walletAddress)
-    .single();
-  const balance = data ? parseFloat(data.balance) : 0;
-  return { sufficient: balance >= cost, balance, cost };
-}
 
-async function deductCredits(supabase: any, walletAddress: string, action: string, description: string): Promise<number> {
-  const cost = CREDIT_COSTS[action] || 1;
 
-  // SECURITY: Atomic deduction with negative-balance guard.
-  // Uses RPC to run a single UPDATE that only succeeds if balance >= cost.
-  // This prevents race conditions from concurrent requests draining credits below zero.
-  const { data: rpcResult, error: rpcError } = await supabase.rpc("deduct_credits_atomic", {
-    p_wallet: walletAddress,
-    p_cost: cost,
+const AGENT_NANO_FEES: Record<string, string> = {
+  price: '0.005',
+  news: '0.005',
+  balance: '0.003',
+  conversation: '0.005',
+  help: '0.005',
+  yield_options: '0.005',
+  morpho_vault: '0.005',
+  unknown: '0.005',
+};
+
+function executeAsyncNanopayment(client: any, walletId: string, action: string) {
+  const feeAmount = AGENT_NANO_FEES[action];
+  if (!feeAmount) return;
+
+  client.createTransaction({
+    walletId,
+    blockchain: 'ARC-TESTNET',
+    destinationAddress: process.env.TREASURY_WALLET_ADDRESS!,
+    amount: [feeAmount],
+    tokenAddress: '0x3600000000000000000000000000000000000000',
+    fee: { type: 'level', config: { feeLevel: 'MEDIUM' } },
+  }).catch((err: any) => {
+    console.error(`[Nanopayment Failed] ${action} - ${err.message}`);
   });
-
-  // SECURITY: If the atomic RPC fails or doesn't exist, HARD FAIL.
-  // The previous fallback used a non-atomic read-then-write which was vulnerable to
-  // race-condition double-spend attacks. Never silently degrade to the racy path.
-  if (rpcError) {
-    console.error("FATAL: deduct_credits_atomic RPC failed:", rpcError.message);
-    throw new Error("Credit system misconfigured. Ensure the deduct_credits_atomic RPC exists in Supabase.");
-  }
-
-  const newBalance = parseFloat(rpcResult);
-
-  await supabase.from("credits_ledger").insert({
-    wallet_address: walletAddress,
-    type: "deduct",
-    amount: -cost,
-    balance_after: newBalance,
-    description,
-  });
-
-  return newBalance;
 }
 
 export async function POST(req: Request) {
@@ -1023,22 +997,44 @@ export async function POST(req: Request) {
     const client = getCircleClient();
     const supabase = getSupabaseAdmin();
 
+    // Check 30 Daily Request Cap
+    const todayStr = new Date().toISOString().split("T")[0];
+    
+    console.log(`[AGENT] Checking daily usage for: ${walletAddress.toLowerCase()}`);
+    
+    const { data: usage, error: fetchErr } = await (supabase as any)
+      .from("daily_usage")
+      .select("*")
+      .eq("wallet_address", walletAddress.toLowerCase())
+      .single();
+      
+    if (fetchErr && fetchErr.code !== 'PGRST116') {
+      console.error("[daily_usage] fetch error:", fetchErr);
+    }
+
+    if (usage) {
+      console.log(`[AGENT] Found usage for ${walletAddress.toLowerCase()}: ${usage.request_count}`);
+      if (usage.last_reset_date !== todayStr) {
+        const { error: updErr } = await (supabase as any).from("daily_usage").update({ request_count: 1, last_reset_date: todayStr }).eq("wallet_address", walletAddress.toLowerCase());
+        if (updErr) console.error("[daily_usage] update error:", updErr);
+      } else if (usage.request_count >= 30) {
+        return NextResponse.json({ success: false, intent: "unknown", message: "You have reached your daily limit of 30 AI requests. Please try again tomorrow.", limitReached: true });
+      } else {
+        const { error: updErr } = await (supabase as any).from("daily_usage").update({ request_count: usage.request_count + 1 }).eq("wallet_address", walletAddress.toLowerCase());
+        if (updErr) console.error("[daily_usage] update error:", updErr);
+      }
+    } else {
+      console.log(`[AGENT] No usage found for ${walletAddress.toLowerCase()}, inserting 1`);
+      const { error: insErr } = await (supabase as any).from("daily_usage").insert({ wallet_address: walletAddress.toLowerCase(), request_count: 1, last_reset_date: todayStr });
+      if (insErr) console.error("[daily_usage] insert error:", insErr);
+    }
+
     // Use Gemini to parse the user's intent
     const intent = await parseIntentWithGemini(sanitizedPrompt, agentProfile, history);
     // SECURITY: Log the action but redact specific amounts, tokens, and handles
     console.log(`[AGENT] Parsed intent: { action: ${intent.action}, chain: ${intent.sourceChain} }`);
 
-    // --- CREDIT CHECK: Ensure user has enough credits ---
-    const creditCheck = await checkCredits(supabase, walletAddress, intent.action);
-    if (!creditCheck.sufficient) {
-      return NextResponse.json({
-        success: false,
-        intent: intent.action,
-        message: `You've run out of AI credits. Top up your credits to continue using Liqdx.`,
-        credits: creditCheck.balance,
-        insufficientCredits: true,
-      });
-    }
+    
 
     // --- SEND INTENT (P2P) ---
     if (intent.action === "send") {
@@ -1127,7 +1123,7 @@ export async function POST(req: Request) {
         });
 
         // Deduct credits after successful send
-        const remainingCredits = await deductCredits(supabase, walletAddress, "send", `P2P send ${sendAmount} ${intent.tokenIn} to @${handle}`);
+        // Fee extraction skipped for send
 
         return NextResponse.json({
           success: true,
@@ -1135,7 +1131,6 @@ export async function POST(req: Request) {
           message: `Successfully sent ${sendAmount} ${intent.tokenIn} to @${handle} (${destAddress.slice(0, 6)}...${destAddress.slice(-4)}).`,
           amount: sendAmount,
           txHash: response.txHash,
-          credits: remainingCredits,
         });
 
       } catch (err: any) {
@@ -1298,7 +1293,7 @@ export async function POST(req: Request) {
           : "No tokens found";
 
         // Deduct credits for balance check
-        const remainingCredits = await deductCredits(supabase, walletAddress, "balance", "Multichain Balance Check");
+        executeAsyncNanopayment(client, walletId, "balance");
 
         return NextResponse.json({
           success: true,
@@ -1306,7 +1301,6 @@ export async function POST(req: Request) {
           message: JSON.stringify({ balances: allBalances, yields: yields }), // Serialized for DB persistence
           balances: allBalances,
           yields: yields,
-          credits: remainingCredits,
         });
       } catch (err: any) {
         return NextResponse.json({
@@ -1441,7 +1435,7 @@ export async function POST(req: Request) {
         });
 
         // Deduct credits after successful swap
-        const remainingCredits = await deductCredits(supabase, walletAddress, "swap", `Swap ${swapAmount} ${intent.tokenIn} → ${intent.tokenOut}`);
+        // Fee extraction skipped for swap
 
         return NextResponse.json({
           success: true,
@@ -1455,7 +1449,6 @@ export async function POST(req: Request) {
           message: `Swap of ${swapAmount} ${intent.tokenIn} to ${intent.tokenOut} executed successfully. You'll receive ~${estimatedAmount || "0.00"} ${intent.tokenOut}. Rate: 1 ${intent.tokenIn} = ${calculatedRate} ${intent.tokenOut}.`,
           txHash: realTxHash || txId,
           estimatedOutput: estimatedAmount || null,
-          credits: remainingCredits,
         });
       } catch (swapErr: any) {
         // Friendly error for common swap failures
@@ -1476,18 +1469,18 @@ export async function POST(req: Request) {
           try {
             // FALLBACK TO ACHSWAP
             const { parseUnits } = require("viem");
-            
+
             // AchSwap requires strict 40-character hex addresses.
             // On Arc Testnet, native USDC is 0x0...0 (18 decimals) and EURC is 0x89B5... (6 decimals)
             const isUsdcIn = intent.tokenIn.toUpperCase() === "USDC";
-            const tokenInAddr = isUsdcIn 
-              ? "0x0000000000000000000000000000000000000000" 
+            const tokenInAddr = isUsdcIn
+              ? "0x0000000000000000000000000000000000000000"
               : "0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a";
             const tokenInDecimals = isUsdcIn ? 18 : 6;
 
             const isEurcOut = intent.tokenOut.toUpperCase() === "EURC";
-            const tokenOutAddr = isEurcOut 
-              ? "0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a" 
+            const tokenOutAddr = isEurcOut
+              ? "0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a"
               : "0x0000000000000000000000000000000000000000";
             const tokenOutDecimals = isEurcOut ? 6 : 18;
 
@@ -1504,26 +1497,26 @@ export async function POST(req: Request) {
 
             // If we are swapping an ERC20 (not native), we must approve the adapter first
             if (tokenInAddr !== "0x0000000000000000000000000000000000000000") {
-               await client.createContractExecutionTransaction({
-                  walletId: walletId,
-                  contractAddress: tokenInAddr,
-                  abiFunctionSignature: "approve(address,uint256)",
-                  abiParameters: [swapTx.to, rawAmount],
-                  fee: { type: "level", config: { feeLevel: "MEDIUM" } }
-               });
-               // Wait for approval to index
-               await new Promise(res => setTimeout(res, 4000));
+              await client.createContractExecutionTransaction({
+                walletId: walletId,
+                contractAddress: tokenInAddr,
+                abiFunctionSignature: "approve(address,uint256)",
+                abiParameters: [swapTx.to, rawAmount],
+                fee: { type: "level", config: { feeLevel: "MEDIUM" } }
+              });
+              // Wait for approval to index
+              await new Promise(res => setTimeout(res, 4000));
             }
 
             // Execute the swap via raw callData
             // Note: Circle blocks sponsored fees for raw callData, so we must use feeLevel.
             // Circle API expects native value in base units (decimals), not wei!
             const tx = await client.createContractExecutionTransaction({
-               walletId: walletId,
-               contractAddress: swapTx.to,
-               callData: swapTx.data as `0x${string}`,
-               fee: { type: "level", config: { feeLevel: "MEDIUM" } },
-               amount: swapTx.value === "0" ? undefined : (Number(swapTx.value) / 1e18).toString()
+              walletId: walletId,
+              contractAddress: swapTx.to,
+              callData: swapTx.data as `0x${string}`,
+              fee: { type: "level", config: { feeLevel: "MEDIUM" } },
+              amount: swapTx.value === "0" ? undefined : (Number(swapTx.value) / 1e18).toString()
             });
 
             const txId = tx.data?.id || "";
@@ -1554,7 +1547,7 @@ export async function POST(req: Request) {
               confirmed_at: new Date().toISOString(),
             });
 
-            const remainingCredits = await deductCredits(supabase, walletAddress, "swap", `Swap ${swapAmount} ${intent.tokenIn} → ${intent.tokenOut} (AchSwap)`);
+            
 
             return NextResponse.json({
               success: true,
@@ -1568,7 +1561,6 @@ export async function POST(req: Request) {
               message: `Swap of ${swapAmount} ${intent.tokenIn} to ${intent.tokenOut} executed successfully. You'll receive ~${expectedOutDecimals} ${intent.tokenOut}. Rate: 1 ${intent.tokenIn} = ${calculatedRate} ${intent.tokenOut}.`,
               txHash: realTxHash || txId,
               estimatedOutput: expectedOutDecimals,
-              credits: remainingCredits,
             });
 
           } catch (achSwapErr: any) {
@@ -1785,7 +1777,7 @@ export async function POST(req: Request) {
               });
 
               // Deduct credits after successful bridge
-              const remainingCredits = await deductCredits(supabase, walletAddress, "bridge", `LI.FI Bridge ${bridgeAmount} USDC to ${destinationChainName}`);
+              // Fee extraction skipped for bridge
 
               return NextResponse.json({
                 success: true,
@@ -1795,7 +1787,6 @@ export async function POST(req: Request) {
                 destinationChain: destinationChainName,
                 fee: `${lifiFee} USDC (LI.FI 0.25%)`,
                 txHash: realTxHash || txId,
-                credits: remainingCredits,
               });
             } catch (execErr: any) {
               console.error("[LI.FI] Bridge execution failed:", execErr);
@@ -1866,7 +1857,7 @@ export async function POST(req: Request) {
         });
 
         // Deduct credits after successful bridge
-        const remainingCredits = await deductCredits(supabase, walletAddress, "bridge", `CCTP Bridge ${bridgeAmount} USDC to ${destinationChainName}`);
+        // Fee extraction skipped for bridge
 
         const feeValue = parseFloat(estimatedRelayerFee.replace(/[^0-9.]/g, '')) || 0;
         const receivedAmount = Math.max(0, parseFloat(bridgeAmount) - feeValue).toFixed(4).replace(/\.?0+$/, '');
@@ -1879,7 +1870,6 @@ export async function POST(req: Request) {
           destinationChain: destinationChainName,
           fee: `Relayer Gas Fee (${estimatedRelayerFee})`,
           txHash: realTxHash || txId,
-          credits: remainingCredits,
         });
       } catch (bridgeErr: any) {
         const errMsg = bridgeErr?.message || "";
@@ -2130,7 +2120,7 @@ export async function POST(req: Request) {
 
         // Deduct credits
         const protocolName = intent.protocol === "morpho" ? "Morpho Vault" : "Aave V3";
-        const remainingCredits = await deductCredits(supabase, walletAddress, "yield", `${protocolName} Yield ${yieldAmount} USDC on ${chainName}`);
+        // Fee extraction skipped for yield
 
         // Trigger Auto-Pumper asynchronously in the background
         if (intent.protocol === "morpho") {
@@ -2146,7 +2136,6 @@ export async function POST(req: Request) {
           destinationChain: chainName,
           fee: "Sponsored Gas",
           txHash: realTxHash || txId,
-          credits: remainingCredits,
           apy: apy
         });
       } catch (yieldErr: any) {
@@ -2397,7 +2386,7 @@ export async function POST(req: Request) {
         }
 
         // Deduct credits
-        const remainingCredits = await deductCredits(supabase, walletAddress, "withdraw_yield", `${intent.protocol === "morpho" ? "Morpho" : "Aave"} Withdraw ${withdrawAmount} USDC on ${chainName}`);
+        // Fee extraction skipped for withdraw_yield
 
         // Trigger background polling for EXACT yield
         pollAndConfirmYield(realTxHash || txId || "", exactPrincipal, walletAddress, supabase, txId || "").catch(err => console.error(err));
@@ -2410,7 +2399,6 @@ export async function POST(req: Request) {
           destinationChain: chainName,
           fee: "Sponsored Gas",
           txHash: realTxHash || txId,
-          credits: remainingCredits,
           status: "pending_confirmation",
           exactPrincipal: exactPrincipal
         });
@@ -2462,13 +2450,12 @@ export async function POST(req: Request) {
           utilization: util.toFixed(2)
         };
 
-        const remainingCredits = await deductCredits(supabase, walletAddress, "conversation", "Morpho Vault Check");
+        executeAsyncNanopayment(client, walletId, "conversation");
 
         return NextResponse.json({
           success: true,
           intent: "morpho_vault",
           message: JSON.stringify(data),
-          credits: remainingCredits,
         });
 
       } catch (err: any) {
@@ -2497,13 +2484,12 @@ export async function POST(req: Request) {
           { protocol: "Morpho Vault", apy: morphoAPY, chain: "Base Sepolia", asset: "USDC" }
         ];
 
-        const remainingCredits = await deductCredits(supabase, walletAddress, "yield_options", "Yield Options Check");
+        executeAsyncNanopayment(client, walletId, "yield_options");
 
         return NextResponse.json({
           success: true,
           intent: "yield_options",
           message: JSON.stringify(data),
-          credits: remainingCredits,
         });
       } catch (err) {
         return NextResponse.json({
@@ -2572,13 +2558,12 @@ export async function POST(req: Request) {
       }
 
       // Deduct credits
-      const remainingCredits = await deductCredits(supabase, walletAddress, "price", `Price Check`);
+      executeAsyncNanopayment(client, walletId, "price");
 
       return NextResponse.json({
         success: true,
         intent: "price",
         message: JSON.stringify(priceData),
-        credits: remainingCredits,
       });
     }
 
@@ -2677,13 +2662,12 @@ export async function POST(req: Request) {
       }
 
       // Deduct credits
-      const remainingCredits = await deductCredits(supabase, walletAddress, "news", `Crypto News Check`);
+      executeAsyncNanopayment(client, walletId, "news");
 
       return NextResponse.json({
         success: true,
         intent: "news",
         message: JSON.stringify({ pulse: pulseData, aiTake, articles: newsItems }),
-        credits: remainingCredits,
       });
     }
 
@@ -2702,13 +2686,12 @@ export async function POST(req: Request) {
       const aiResponse = await generateConversationalResponse(sanitizedPrompt, balanceContext, agentProfile, history);
 
       // Deduct credits for conversational messages
-      const remainingCredits = await deductCredits(supabase, walletAddress, intent.action, `Chat: ${prompt.slice(0, 50)}`);
+      executeAsyncNanopayment(client, walletId, intent.action);
 
       return NextResponse.json({
         success: true,
         intent: intent.action,
         message: aiResponse,
-        credits: remainingCredits,
       });
     }
 

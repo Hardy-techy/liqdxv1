@@ -1,4 +1,4 @@
-export type Tab = "terminal" | "intelligence" | "history" | "credits";
+export type Tab = "terminal" | "intelligence" | "history";
 
 export interface ChatMessage {
   id: string;

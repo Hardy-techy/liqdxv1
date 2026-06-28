@@ -9,7 +9,6 @@ import { LandingPage } from "@/components/dashboard/LandingPage";
 import { TerminalView } from "@/components/dashboard/TerminalView";
 import { IntelligenceView } from "@/components/dashboard/IntelligenceView";
 import { HistoryView } from "@/components/dashboard/HistoryView";
-import { CreditsView } from "@/components/dashboard/CreditsView";
 
 import { useWalletAuth } from "@/hooks/useWalletAuth";
 import { useChatSession } from "@/hooks/useChatSession";
@@ -21,7 +20,7 @@ function DashboardInner() {
   const { sendTransactionAsync } = useSendTransaction();
   const { theme, toggleTheme } = useTheme();
 
-  const [activeTab, setActiveTab] = useState<"terminal" | "intelligence" | "history" | "credits">("terminal");
+  const [activeTab, setActiveTab] = useState<"terminal" | "intelligence" | "history">("terminal");
   const [activeAction, setActiveAction] = useState<"none" | "deposit" | "withdraw">("none");
   const [depositAmount, setDepositAmount] = useState("");
   const [withdrawAmount, setWithdrawAmount] = useState("");
@@ -39,12 +38,7 @@ function DashboardInner() {
     twitterHandle,
     authError,
     setAuthError,
-    renderErrorToast,
-    credits,
-    setCredits,
-    topUpLoading,
-    setTopUpLoading
-  } = useWalletAuth();
+    renderErrorToast,} = useWalletAuth();
 
   const {
     chatInput,
@@ -60,15 +54,14 @@ function DashboardInner() {
     loadChatSessionsAndOpenRecent,
     handleChatSubmit,
     isLoadingSession,
+    dailyUsage,
   } = useChatSession({
     address,
     wallet,
     setActiveTab,
     fetchBalance: (id: string) => fetchBalanceRef.current?.(id),
     fetchTxHistory: (addr: string) => fetchTxHistoryRef.current?.(addr),
-    setAuthError,
-    setCredits
-  });
+    setAuthError,});
 
   const {
     txHistory,
@@ -237,10 +230,10 @@ function DashboardInner() {
           isHoldingsDropdownOpen={isHoldingsDropdownOpen}
           setIsHoldingsDropdownOpen={setIsHoldingsDropdownOpen}
           allBalances={allBalances}
-          credits={credits}
           setActiveTab={setActiveTab}
           isDropdownOpen={isDropdownOpen}
           setIsDropdownOpen={setIsDropdownOpen}
+          dailyUsage={dailyUsage}
         />
       )}
 
@@ -279,19 +272,6 @@ function DashboardInner() {
         />
       )}
 
-      {activeTab === "credits" && (
-        <CreditsView
-          credits={credits}
-          wallet={wallet}
-          uniqueBalancesArray={uniqueBalancesArray}
-          inferSymbol={inferSymbol}
-          topUpLoading={topUpLoading}
-          setTopUpLoading={setTopUpLoading}
-          setCredits={setCredits}
-          fetchBalance={fetchBalance}
-          setAuthError={setAuthError}
-        />
-      )}
 
       {/* Premium DeFi Modal (Deposit & Withdraw) */}
       {activeAction !== "none" && (

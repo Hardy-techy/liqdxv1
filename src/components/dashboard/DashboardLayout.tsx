@@ -3,8 +3,8 @@ import { ConnectButton } from '@rainbow-me/rainbowkit';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
-  activeTab: "terminal" | "intelligence" | "history" | "credits";
-  setActiveTab: (tab: "terminal" | "intelligence" | "history" | "credits") => void;
+  activeTab: "terminal" | "intelligence" | "history";
+  setActiveTab: (tab: "terminal" | "intelligence" | "history") => void;
   renderErrorToast: () => React.ReactNode;
   twitterHandle: string | null;
   theme: string;
@@ -46,8 +46,7 @@ export function DashboardLayout({
             {[
               { id: "terminal", label: "Dashboard" },
               { id: "intelligence", label: "Agent" },
-              { id: "history", label: "Activity" },
-              { id: "credits", label: "Credits" }
+              { id: "history", label: "Activity" }
             ].map(item => {
               const isActive = activeTab === item.id;
               return (
@@ -138,8 +137,7 @@ export function DashboardLayout({
           {[
             { id: "terminal", label: "Dashboard" },
             { id: "intelligence", label: "Agent" },
-            { id: "history", label: "Activity" },
-            { id: "credits", label: "Credits" }
+            { id: "history", label: "Activity" }
           ].map(item => {
             const isActive = activeTab === item.id;
             return (

@@ -40,6 +40,14 @@ const formatTxDetails = (tx: any) => {
     return `Supply ${amount} USDC to ${protocol} (${chain})`;
   }
   
+  // Compress Swap messages
+  if (msg.toLowerCase().includes("swap of")) {
+    const swapMatch = msg.match(/swap of ([\d.]+)\s*([A-Z]+)\s*to\s*([A-Z]+)/i);
+    if (swapMatch) {
+      return `Swap ${swapMatch[1]} ${swapMatch[2].toUpperCase()} to ${swapMatch[3].toUpperCase()}`;
+    }
+  }
+  
   // Compress long yield withdrawal messages
   if (msg.includes("initiated withdrawal of") || msg.includes("Initiated Withdrawal Of")) {
     const amountMatch = msg.match(/withdrawal of (all your|\d+(?:\.\d+)?)/i);

@@ -27,10 +27,10 @@ interface TerminalViewProps {
   isHoldingsDropdownOpen: boolean;
   setIsHoldingsDropdownOpen: (open: boolean) => void;
   allBalances: any[];
-  credits: number;
   setActiveTab: (tab: any) => void;
   isDropdownOpen: boolean;
   setIsDropdownOpen: (open: boolean) => void;
+  dailyUsage?: number;
 }
 
 export function TerminalView({
@@ -53,10 +53,10 @@ export function TerminalView({
   isHoldingsDropdownOpen,
   setIsHoldingsDropdownOpen,
   allBalances,
-  credits,
   setActiveTab,
   isDropdownOpen,
-  setIsDropdownOpen
+  setIsDropdownOpen,
+  dailyUsage = 0
 }: TerminalViewProps) {
   return (
     <div className="flex flex-col w-full max-w-[1100px] mx-auto p-4 sm:p-5 gap-4">
@@ -328,38 +328,23 @@ export function TerminalView({
         {/* Box 5: AI AGENT HUB */}
         <div className="bg-white dark:bg-[#1A1A1A] rounded-[20px] p-6 shadow-[0_2px_10px_rgb(0,0,0,0.03)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] flex flex-col relative h-full border border-zinc-100 dark:border-white/5">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-[16px] font-medium text-zinc-900 dark:text-white">AI Credits</h3>
-            <div className="px-3 py-1 bg-zinc-100 dark:bg-white/5 text-zinc-500 dark:text-zinc-400 text-[12px] rounded-full font-medium">Monthly</div>
+            <h3 className="text-[16px] font-medium text-zinc-900 dark:text-white">AI Agent Hub</h3>
+            <div className="px-3 py-1 bg-zinc-100 dark:bg-white/5 text-zinc-500 dark:text-zinc-400 text-[12px] rounded-full font-medium">Daily</div>
           </div>
-
-          <div className="flex flex-col flex-1 items-center justify-center">
-            <span className="text-[2.5rem] leading-none font-semibold text-zinc-900 dark:text-white tracking-tight">
-              {credits % 1 === 0 ? credits.toLocaleString() : credits.toFixed(1)}
-            </span>
-            <span className="text-[13px] text-zinc-500 font-medium mt-1">Credits Available</span>
-          </div>
-
-          <div className="mt-auto">
-            {(() => {
-              const maxCredits = credits > 20 ? 25 : 20;
-              const usedCredits = Math.max(0, maxCredits - credits);
-              const percentUsed = Math.min(100, (usedCredits / maxCredits) * 100);
-              
-              return (
-                <>
-                  <div className="flex justify-between text-[12px] font-medium text-zinc-500 mb-1.5">
-                    <span>Usage</span>
-                    <span>{usedCredits % 1 === 0 ? usedCredits : usedCredits.toFixed(1)} / {maxCredits}</span>
-                  </div>
-                  <div className="w-full h-2 rounded-full bg-zinc-100 dark:bg-[#2A2A2A] overflow-hidden mb-3">
-                    <div className="h-full bg-[#FF7A00] rounded-full transition-all duration-500" style={{ width: `${percentUsed}%` }}></div>
-                  </div>
-                  <button onClick={() => setActiveTab("credits")} className="w-full py-2 border border-zinc-200 dark:border-white/10 hover:bg-zinc-50 dark:hover:bg-white/5 text-zinc-900 dark:text-white rounded-2xl text-[13px] font-medium transition-all flex items-center justify-center gap-2">
-                    Top Up Credits
-                  </button>
-                </>
-              );
-            })()}
+          
+          <div className="flex-1 flex flex-col justify-end">
+            <div className="flex items-end gap-1 mb-2">
+              <span className="text-[42px] leading-none font-semibold text-zinc-900 dark:text-white tracking-tight">{dailyUsage}</span>
+              <span className="text-[20px] leading-none text-zinc-400 dark:text-zinc-500 font-medium pb-[4px]">/ 30</span>
+            </div>
+            <span className="text-[14px] text-zinc-500 font-medium mt-1">Daily Requests Used</span>
+            
+            <div className="w-full bg-[#E5E7EB] dark:bg-[#2A2A2A] h-2.5 rounded-full mt-5 overflow-hidden">
+              <div 
+                className="bg-[#0088f0] h-full rounded-full transition-all duration-500 ease-out" 
+                style={{ width: `${Math.min(100, (dailyUsage / 30) * 100)}%` }}
+              ></div>
+            </div>
           </div>
         </div>
 

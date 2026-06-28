@@ -7,16 +7,13 @@ export function useChatSession({
   setActiveTab,
   fetchBalance,
   fetchTxHistory,
-  setAuthError,
-  setCredits
-}: {
+  setAuthError,}: {
   address?: string;
   wallet?: any;
-  setActiveTab?: (tab: "terminal" | "intelligence" | "history" | "credits") => void;
+  setActiveTab?: (tab: "terminal" | "intelligence" | "history") => void;
   fetchBalance?: (walletId: string) => void;
   fetchTxHistory?: (address: string) => void;
   setAuthError?: (error: string | null) => void;
-  setCredits?: (credits: number) => void;
 }) {
   const [chatSessions, setChatSessions] = useState<any[]>([]);
   const [chatSessionId, setChatSessionId] = useState<string | null>(null);
@@ -24,6 +21,20 @@ export function useChatSession({
   const [chatInput, setChatInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingSession, setIsLoadingSession] = useState(false);
+  const [dailyUsage, setDailyUsage] = useState<number>(0);
+
+  const fetchDailyUsage = async () => {
+    if (!wallet?.address) return;
+    try {
+      const res = await fetch(`/api/usage?address=${wallet.address}&t=${Date.now()}`);
+      if (res.ok) {
+        const data = await res.json();
+        setDailyUsage(data.requestCount || 0);
+      }
+    } catch (e) {
+      console.error("Failed to fetch daily usage", e);
+    }
+  };
 
   const hasAutoTitled = useRef(false);
   const msgDbIdMap = useRef<Record<string, string>>({});
@@ -39,6 +50,8 @@ export function useChatSession({
       const data = await res.json();
       const sessions = data.sessions || [];
       setChatSessions(sessions);
+
+      fetchDailyUsage();
 
       // Always start a new chat session on initial load/refresh per user request
       await startNewChat(walletAddr);
@@ -256,8 +269,8 @@ export function useChatSession({
         const errMsg: ChatMessage = { ...pendingAiMsg, status: "error", content: data.error || data.message };
         setMessages(prev => prev.map(m => m.id === aiMsgId ? errMsg : m));
         if (currentSessionId && address) saveMsgToDb(currentSessionId, address, errMsg);
-        if (data.credits !== undefined) setCredits?.(data.credits);
-        if (data.insufficientCredits) setActiveTab?.("credits");
+        if (data.limitReached) setDailyUsage(30);
+
         return;
       }
 
@@ -283,7 +296,8 @@ export function useChatSession({
 
       if (currentSessionId && address) saveMsgToDb(currentSessionId, address, finalAiMsg);
       if (address) fetchChatSessions(address);
-      if (data.credits !== undefined) setCredits?.(data.credits);
+      fetchDailyUsage();
+
 
       if (data.txHash) {
         setTimeout(() => {
@@ -323,6 +337,7 @@ export function useChatSession({
     handleChatSubmit,
     isChatEmpty,
     loadChatSessionsAndOpenRecent,
-    isLoadingSession
+    isLoadingSession,
+    dailyUsage,
   };
 }

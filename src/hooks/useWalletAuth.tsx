@@ -18,9 +18,7 @@ export function useWalletAuth(onAuthenticated?: (address: string) => void) {
   // New Wallet & Credits State
   const [wallet, setWallet] = useState<any>(null);
   const [wallets, setWallets] = useState<any[]>([]);
-  const [credits, setCredits] = useState<number>(0);
-  const [topUpLoading, setTopUpLoading] = useState(false);
-
+    
   // Helper to Render Toast
   const renderErrorToast = () => {
     if (!authError) return null;
@@ -72,14 +70,7 @@ export function useWalletAuth(onAuthenticated?: (address: string) => void) {
         }
       }
       
-      // 2. Fetch Credits
-      // Important: We fetch credits for the active Circle Wallet, not the MetaMask address
-      const addressToFetch = fetchedActiveWallet?.address || userAddress;
-      const cRes = await fetch(`/api/credits?address=${addressToFetch}`);
-      if (cRes.ok && cRes.headers.get("content-type")?.includes("application/json")) {
-        const cData = await cRes.json();
-        if (cData.balance !== undefined) setCredits(cData.balance);
-      }
+      // Credits functionality removed
     } catch (err) {
       console.error("Failed to fetch wallets/credits:", err);
     }
@@ -176,7 +167,6 @@ export function useWalletAuth(onAuthenticated?: (address: string) => void) {
       authAttemptedRef.current = null;
       setWallet(null);
       setWallets([]);
-      setCredits(0);
     }
   }, [isConnected, address, signMessageAsync, onAuthenticated]);
 
@@ -216,10 +206,7 @@ export function useWalletAuth(onAuthenticated?: (address: string) => void) {
     setAuthError,
     wallet,
     wallets,
-    credits,
-    setCredits,
-    topUpLoading,
-    setTopUpLoading,
+    
     renderErrorToast
   };
 }
